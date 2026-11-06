@@ -17,10 +17,11 @@ const PORT = process.env.PORT || 3000;
 const LIMIT = 4;
 const STAGES = 5;
 const ROUND_MS = 22000;
-const RULES_MS = 5400; // Três telas rápidas, uma regra por vez, sincronizadas na sala.
-const BRIEFING_MS = 4800; // Cartão de química por fase.
-const FIRST_BRIEFING_MS = 3600; // Evita uma espera longa depois das regras iniciais.
-const STAGE_COUNTDOWN_MS = 1800;
+
+const RULES_MS = 11400;
+const BRIEFING_MS = 3200;
+const FIRST_BRIEFING_MS = 3400;
+const STAGE_COUNTDOWN_MS = 3500;
 // Cooperativo: objetivo por etapa, 5 erros individuais e funções herdadas.
 const COOP_LIVES = 5;
 const COOP_GOALS = [80,110,140,170,200];
