@@ -138,6 +138,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #F5CF20;outline-offse
  background:#F5CF20;color:#090909;border:2px solid #090909;padding:10px 14px;
  border-radius:5px;font-size:clamp(11px,2vw,14px);font-weight:950;white-space:nowrap;pointer-events:none}
 .spectator-notice.hidden{display:none!important}
+<<<<<<< HEAD
 @media(max-width:620px){.home{margin:0 auto}.topbar{width:calc(100% - 28px);padding:12px 0}.container{width:calc(100% - 28px)}.home{gap:24px;padding:43px 0 24px}.hero-title{font-size:clamp(60px,14vw,78px);letter-spacing:-4px;margin-bottom:12px}.hero-desc{font-size:14px}.panel,.home .panel{padding:20px;border-radius:9px}.mode{min-height:50px}.mode b{font-size:12px}.game-hud{border-radius:7px}.game-shell{padding:0 7px 7px}.board{border-radius:7px}.lobby{padding-top:24px}.lobby-head{margin-bottom:16px}.game-target .mono{font-size:11px}}
 
 /* Instrução da fase: texto DIRETAMENTE na pista, no mesmo centro do 3,2,1. */
@@ -157,6 +158,9 @@ button:focus-visible,input:focus-visible{outline:2px solid #F5CF20;outline-offse
 .four-lanes.race-view .float:not(.stage-intro),.four-lanes.arena-view .float:not(.stage-intro){left:50%;top:46%}
 @media(max-width:390px){.track-intro-label{margin-bottom:9px}.track-intro-title{margin-bottom:9px}.track-intro-help{margin-top:12px}}
 @media(prefers-reduced-motion:reduce){.board .float.stage-intro{animation:none}}
+=======
+@media(max-width:620px){.home{margin:0 auto}.topbar{width:calc(100% - 28px);padding:12px 0}.container{width:calc(100% - 28px)}.home{gap:24px;padding:43px 0 24px}.hero-title{font-size:clamp(60px,14vw,78px);letter-spacing:-4px;margin-bottom:12px}.hero-desc{font-size:14px}.panel,.home .panel{padding:20px;border-radius:9px}.mode{min-height:50px}.mode b{font-size:12px}.game-hud{border-radius:7px}.game-shell{padding:0 7px 7px}.board{border-radius:7px}.lobby{padding-top:24px}.lobby-head{margin-bottom:16px}.mission-card{border-radius:9px}.game-target .mono{font-size:11px}}
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
 
 /* Regras por modalidade: uma mensagem de cada vez, sem gradientes nem enfeites. */
 .rules-overlay{position:fixed;inset:0;z-index:135;display:grid;place-items:center;padding:18px;background:#080808}
@@ -164,13 +168,21 @@ button:focus-visible,input:focus-visible{outline:2px solid #F5CF20;outline-offse
 .rules-card{width:min(530px,100%);min-height:315px;display:flex;flex-direction:column;justify-content:space-between;gap:18px;padding:clamp(23px,5vw,38px);border:1px solid #F5CF20;border-radius:10px;background:#141414;color:#FAFAFA}
 .rules-top{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:11px;font-weight:900;letter-spacing:1px;color:#F5CF20}
 .rules-counter{color:#BDBDBD;white-space:nowrap}
+<<<<<<< HEAD
 .rules-content{min-height:138px;display:flex;flex-direction:column;justify-content:center;gap:13px;animation:rulesSwap 3800ms both}
+=======
+.rules-content{min-height:138px;display:flex;flex-direction:column;justify-content:center;gap:13px;animation:rulesSwap 1800ms both}
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
 .rules-title{font-size:clamp(30px,7vw,44px);font-weight:950;line-height:1.07;letter-spacing:-1.2px;margin:0}
 .rules-text{font-size:clamp(14px,3.4vw,17px);line-height:1.5;color:#D0D0D0;max-width:420px;margin:0}
 .rules-progress{display:flex;gap:8px}
 .rules-progress span{height:5px;flex:1;border-radius:1px;background:#383838}
 .rules-progress span.active{background:#F5CF20}
+<<<<<<< HEAD
 @keyframes rulesSwap{0%{opacity:0;transform:translateY(14px)}11%{opacity:1;transform:translateY(0)}89%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-12px)}}
+=======
+@keyframes rulesSwap{0%{opacity:0;transform:translateY(14px)}15%{opacity:1;transform:translateY(0)}82%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-12px)}}
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
 /* Revisão opcional: ativa aprendizagem sem poluir o HUD. */
 .review-area{margin-top:16px;max-width:720px}
 .review-toggle{width:100%;text-align:center}
@@ -223,6 +235,22 @@ button:focus-visible,input:focus-visible{outline:2px solid #F5CF20;outline-offse
   
   <div id="rulesOverlay" class="rules-overlay hidden" role="dialog" aria-modal="true" aria-label="Regras do modo de jogo">
    <div class="rules-card"><div class="rules-top"><span id="rulesMode">REGRAS · INDIVIDUAL</span><span class="rules-counter" id="rulesCounter">1 / 3</span></div><div class="rules-content" id="rulesContent" aria-live="polite"><h1 id="rulesTitle" class="rules-title">Pegue o monômero certo.</h1><p id="rulesText" class="rules-text">Arraste o copo para capturar.</p></div><div class="rules-progress" id="rulesProgress" aria-hidden="true"><span></span><span></span><span></span></div></div>
+<<<<<<< HEAD
+=======
+  </div>
+  <div id="missionOverlay" class="mission-overlay hidden" role="dialog" aria-modal="true" aria-label="Missão da fase" aria-live="polite">
+   <div class="mission-card">
+    <div class="mission-head"><span id="missionPhase">FASE 1 DE 5</span><span class="mission-seconds" id="missionSeconds">6s</span></div>
+    <div class="mission-kicker" id="missionKicker">SUA FUNÇÃO</div>
+    <h1 class="mission-title" id="missionTitle">Produza PVC</h1>
+    <p class="mission-explain" id="missionExplain">Sua tarefa nesta rodada:</p>
+    <div class="mission-target" id="missionTarget"><span>PEGUE SOMENTE</span><strong id="missionMonomer">Cloreto de vinila</strong></div>
+    <div class="mission-fact" id="missionFact">Muitas moléculas podem formar uma cadeia longa.</div>
+    <div class="mission-roles hidden" id="missionRoles"><div class="mission-roles-title">Cada jogador pega seu monômero</div><div id="missionRolesList"></div></div>
+    <div class="mission-steps" id="missionSteps"><i></i><i></i><i></i></div>
+    
+   </div>
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
   </div>
 </div>
 <script src="/socket.io/socket.io.js"></script>
@@ -268,9 +296,14 @@ function vibrate(kind){
 }
 const smoothPositions=new Map();
 const pendingOwnContacts=new Set();
+<<<<<<< HEAD
 let missionKey='', countdownKey='';
 const RULES_SLIDE_MS=3800, RULES_TOTAL_MS=RULES_SLIDE_MS*3;
 const FIRST_BRIEFING_MS=3400, OTHER_BRIEFING_MS=3200, STAGE_COUNTDOWN_MS=3500;
+=======
+let missionKey='', missionTimer=null, missionUntil=0, missionCurrentSlide=-1, countdownKey='';
+const RULES_SLIDE_MS=1800, FIRST_BRIEFING_MS=3600, OTHER_BRIEFING_MS=4800;
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
 const MODE_RULES={
  race:[
   ['Pegue o monômero certo.','Arraste o copo. Siga o alvo da fase.'],
@@ -371,7 +404,11 @@ $('shareLink').onclick=async()=>{
  if(navigator.share){try{await navigator.share({title:'PolyDrop',url:linkToRoom(room.code)})}catch{}}else copyLink();
 };
 function leave(){
+<<<<<<< HEAD
  hideRules();hideMission();missionKey='';countdownKey='';$('countdown').classList.add('hidden');
+=======
+ hideRules();hideMission();missionKey='';countdownKey='';
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
  attackAnimations.clear();$('attackBanner').classList.remove('show');
  socket.emit('room:leave');pendingOwnContacts.clear();caughtIds.clear();room=null;myId=null;world=null;smoothPositions.clear();playing=false;lastStage=-1;lastQR='';lastStartedRound=-1;finishedRound=-1;
  clearRoom();clearInterval(countTick);history.replaceState(null,'',location.pathname);showScreen('home');
@@ -521,7 +558,11 @@ function rulesSlide(slide,elapsed=0){
 }
 function refreshRules(){
  if(!room||room.state!=='rules'){hideRules();return;}
+<<<<<<< HEAD
  const elapsed=Math.max(0,Math.min(RULES_TOTAL_MS-1,(Date.now()+serverClockOffset)-(rulesUntil-RULES_TOTAL_MS)));
+=======
+ const elapsed=Math.max(0,Math.min(5399,(Date.now()+serverClockOffset)-(rulesUntil-5400)));
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
  const slide=Math.min(2,Math.floor(elapsed/RULES_SLIDE_MS));
  rulesSlide(slide,elapsed%RULES_SLIDE_MS);
 }
@@ -538,7 +579,11 @@ function showRules(snapshot){
  hideMission();
  showScreen('game');playing=false;
  clearInterval(countTick);$('countdown').classList.add('hidden');
+<<<<<<< HEAD
  rulesUntil=snapshot.rulesUntil||Date.now()+serverClockOffset+RULES_TOTAL_MS;
+=======
+ rulesUntil=snapshot.rulesUntil||Date.now()+5400;
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
  $('rulesOverlay').classList.remove('hidden');
  refreshRules();
  if(!rulesTimer)rulesTimer=setInterval(refreshRules,75);
@@ -551,6 +596,7 @@ function hideMission(){
   prompt.replaceChildren();
  }
 }
+<<<<<<< HEAD
 function updateReadyHud(snapshot){
  const coop=snapshot.mode==='arena',me=myPlayer();
  $('modeTag').textContent=coop?'Cooperativo':'Corrida individual';
@@ -565,10 +611,42 @@ function updateReadyHud(snapshot){
   $('teamGoal').textContent=`META ${snapshot.stageScore||0} / ${snapshot.stageGoal||80}`;
   $('livesStatus').textContent=me?.eliminated?'ELIMINADO':`♥ ${me?.lives??5}/5`;
  }
+=======
+function missionSlide(slide){
+ if(missionCurrentSlide===slide)return;
+ missionCurrentSlide=slide;
+ const d=DATA[myAssignment(room?.stage||0)]||DATA[0],coop=arenaMode();
+ const leads=coop?['MISSÃO COLETIVA','SOBREVIVA','APRENDA QUÍMICA']:['SUA FUNÇÃO','O QUE VOCÊ DEVE PEGAR','QUÍMICA EM 5 SEGUNDOS'];
+ const explains=coop?[
+  `Equipe: marque ${room?.stageGoal||80} pontos nesta etapa.`,
+  'Monômero errado custa 1 vida. Com 0 vidas, você vira espectador; os sobreviventes herdam seus elementos.',
+  d.fact+' '+d.use
+ ]:[
+  'Sua missão nesta fase é produzir o polímero indicado.',
+  'Pegue o monômero correto e desvie dos outros.',
+  d.fact+' '+d.use
+ ];
+ $('missionKicker').textContent=leads[slide];
+ $('missionExplain').textContent=explains[slide];
+ [...$('missionSteps').children].forEach((el,i)=>el.classList.toggle('active',i===slide));
+}
+function refreshMission(){
+ if(!room||room.state!=='briefing'){hideMission();return}
+ const left=Math.max(0,missionUntil-Date.now());
+ $('missionSeconds').textContent=Math.ceil(left/1000)+'s';
+ // São três pequenos slides de texto, sem precisar tocar ou passar manualmente.
+ const duration=(room?.stage===0?FIRST_BRIEFING_MS:OTHER_BRIEFING_MS);
+ const fraction=Math.max(0,Math.min(.999,(duration-left)/duration));
+ missionSlide(Math.min(2,Math.floor(fraction*3)));
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
 }
 function showMission(snapshot){
  if(!snapshot||snapshot.state!=='briefing')return;
  hideRules();
+<<<<<<< HEAD
+=======
+ const key=snapshot.roundId+':'+snapshot.stage;
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
  room={...room,...snapshot};
  const key=snapshot.roundId+':'+snapshot.stage;
  if(lastStartedRound!==snapshot.roundId){
@@ -578,6 +656,7 @@ function showMission(snapshot){
   attackAnimations.clear();$('attackBanner').classList.remove('show');
  }
  showScreen('game');playing=false;
+<<<<<<< HEAD
  clearInterval(countTick);countTick=null;
  const me=myPlayer(),coop=snapshot.mode==='arena',d=DATA[myAssignment(snapshot.stage)]||DATA[snapshot.stage];
  // Reconexão e redistribuição de funções atualizam o texto sem reiniciar a fase.
@@ -594,8 +673,33 @@ function showMission(snapshot){
   prompt.replaceChildren();
   for(const [css,text] of [['track-intro-label',label],['track-intro-title',title],['track-intro-target',catchText],['track-intro-help',help]]){
    const part=document.createElement('span');part.className=css;part.textContent=text;prompt.appendChild(part);
+=======
+ clearInterval(countTick);$('countdown').classList.add('hidden');
+ if(key!==missionKey){
+  missionKey=key;missionCurrentSlide=-1;
+  const d=DATA[myAssignment(snapshot.stage)]||DATA[snapshot.stage];
+  $('missionPhase').textContent=`FASE ${snapshot.stage+1} DE 5`;
+  $('missionTitle').textContent=snapshot.mode==='arena'?`Equipe: ${snapshot.stageGoal||80} pontos`:'Produza '+d.polymer;
+  $('missionMonomer').textContent=snapshot.mode==='arena'
+   ?(myPlayer()?.eliminated?'Você está assistindo':targetLabel(assignedTargets())):d.monomer;
+  $('missionTarget').style.setProperty('--mission-color',d.color);
+  $('missionFact').textContent=snapshot.mode==='arena'?('EXEMPLO: '+d.monomer+' → '+d.polymer+'. '+d.use):('EXEMPLO: '+d.monomer+' → '+d.polymer+'. '+d.use);
+  const arena=snapshot.mode==='arena';
+  $('missionRoles').classList.toggle('hidden',!arena);
+  $('missionRolesList').replaceChildren();
+  if(arena){
+   (snapshot.players||[]).forEach((p,i)=>{
+    const row=document.createElement('div');row.className='mission-role'+(p.id===myId?' mine':'');
+    const name=document.createElement('b');name.textContent=(p.id===myId?'⭐ VOCÊ':p.name);
+    const target=document.createElement('span');
+    target.textContent=p.eliminated?'Eliminado':targetLabel(p.targets||[]);
+    target.style.color='#F5CF20';
+    row.append(name,target);$('missionRolesList').append(row);
+   });
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
   }
  }
+<<<<<<< HEAD
  missionKey=key;
  prompt.classList.add('stage-intro');prompt.classList.remove('hidden');
  $('board').classList.add('intro-on');
@@ -603,6 +707,16 @@ function showMission(snapshot){
 }
 function startCountdown(snapshot){
  hideRules();pendingOwnContacts.clear();
+=======
+ missionUntil=snapshot.briefingUntil||Date.now()+(snapshot.stage===0?FIRST_BRIEFING_MS:OTHER_BRIEFING_MS);
+ $('missionOverlay').classList.remove('hidden');
+ refreshMission();
+ if(!missionTimer)missionTimer=setInterval(refreshMission,120);
+}
+function startCountdown(snapshot){
+ hideRules();
+ pendingOwnContacts.clear();
+>>>>>>> 7d5da87ddbf6dc6b9d6d38c975def79f7be96b3f
  const key=snapshot.roundId+':'+snapshot.stage;
  if(countdownKey===key)return;
  countdownKey=key;
