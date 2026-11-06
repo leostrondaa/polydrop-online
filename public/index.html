@@ -1,927 +1,2819 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>PolyDrop • Multiplayer</title>
-<style>
-*{box-sizing:border-box}
-:root{font-family:system-ui,Arial,sans-serif;color:#eafcff;background:#071622}
-body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 10% 0%,#164b58 0%,transparent 45%),linear-gradient(135deg,#081c2a,#08121f);overflow-x:hidden}
-button,input{font:inherit}
-button{border:1px solid #4e8998;border-radius:13px;background:#163748;color:white;padding:12px 16px;font-weight:800;cursor:pointer}
-button:disabled{opacity:.4;cursor:default}
-button.primary{background:linear-gradient(110deg,#16bda4,#197fc3);border:0}
-button:hover:not(:disabled){filter:brightness(1.15)}
-input{background:#071c2c;border:1px solid #46758a;border-radius:12px;color:white;padding:13px;width:100%;outline:none}
-h1,h2,p{margin:0}
-h1{font-size:clamp(28px,7vw,43px)}
-h2{font-size:21px}
-small,.muted{color:#9cb7c3}
-#app{max-width:1100px;margin:auto;padding:12px}
-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
-.brand{font-size:25px;font-weight:950;letter-spacing:-1px}
-.brand span{color:#4de4c4}
-.status{font-size:12px;color:#9db9c5;background:#102c3d;border:1px solid #315668;border-radius:30px;padding:9px}
-.status.online{color:#54e9a8}
-.panel{background:#102b3bdc;border:1px solid #355b6e;border-radius:22px;padding:20px;box-shadow:0 12px 40px #0003}
-.center{max-width:440px;margin:8vh auto 0;text-align:center}
-.stack{display:grid;gap:12px}
-.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.mode{padding:17px;text-align:left;width:100%;border-radius:16px}
-.mode.selected{border-color:#53e4c7;background:#165265}
-.mode strong{display:block;font-size:17px}
-.mode small{display:block;margin-top:4px}
-.hidden{display:none!important}
-.gap{height:14px}
-.pill{border:1px solid #356577;background:#0a2635;border-radius:13px;padding:12px}
-.code{font-size:34px;letter-spacing:5px;font-weight:950;color:#5cebc9}
-#qr{width:150px;height:150px;background:white;padding:8px;border-radius:12px;object-fit:contain}
-.players{display:grid;gap:8px}
-.player{background:#092435;border-radius:11px;padding:11px;display:flex;justify-content:space-between}
-#gameScreen{display:none}
-#gameScreen.active{display:block}
-.hud{padding:12px 16px;margin-bottom:10px}
-.hud .title{font-size:24px;font-weight:900;color:#50e6b6}
-.hud .target{font-size:13px;color:#bdd4dc}
-.progress{display:flex;gap:5px;margin:8px 0}
-.progress span{height:6px;flex:1;border-radius:8px;background:#385363}
-.progress span.done{background:#4cddbb}
-#board{width:100%;height:calc(100dvh - 245px);min-height:330px;max-height:800px;display:block;touch-action:none;border:1px solid #315d70;border-radius:18px;background:#081d2b}
-#bottom{margin-top:8px;font-size:13px;color:#b6d5df;display:flex;justify-content:space-between}
-#toast{position:fixed;z-index:50;top:18%;left:50%;transform:translateX(-50%);background:#12394def;border:1px solid #65e8c7;border-radius:18px;padding:15px 22px;text-align:center;min-width:220px;max-width:90vw;box-shadow:0 15px 60px #0009;pointer-events:none}
-#toast strong{color:#67f3c9}
-#notice{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#18384c;border:1px solid #6798aa;padding:12px 18px;border-radius:12px;z-index:80;max-width:90vw;text-align:center}
-#results{max-width:450px;margin:8vh auto}
-#countdown{position:fixed;inset:0;display:grid;place-items:center;font-size:100px;font-weight:950;color:#66f7c9;background:#0415229c;z-index:30;pointer-events:none}
-@media(max-width:600px){
-#app{padding:8px}
-.panel{padding:15px}
-.center{margin-top:5vh}
-.brand{font-size:22px}
-#board{height:calc(100dvh - 216px);min-height:340px}
-.hud{padding:9px 12px}
-.hud .title{font-size:20px}
-}
-</style>
-</head>
-<body>
-<div id="app">
-<header>
-<div class="brand">⚗️ Poly<span>Drop</span></div>
-<div class="row">
-<button id="leave" class="hidden">Sair</button>
-<div id="status" class="status">Conectando...</div>
-</div>
-</header>
-
-<section id="home" class="panel center stack">
-<div style="font-size:55px">🧪</div>
-<h1>Química virou jogo.</h1>
-<p class="muted">Capture moléculas. Vença seus amigos.</p>
-<div class="gap"></div>
-<input id="name" maxlength="18" placeholder="Seu apelido" autocomplete="nickname">
-<h2>Escolha o modo</h2>
-<button class="mode selected" id="raceMode">
-<strong>🏁 Corrida individual</strong>
-<small>Sua pista contra a dos amigos.</small>
-</button>
-<button class="mode" id="arenaMode">
-<strong>⚡ Laboratório compartilhado</strong>
-<small>Todos disputam as mesmas moléculas.</small>
-</button>
-<button class="primary" id="create">Criar sala</button>
-<div class="muted">ou entre em uma sala</div>
-<div class="row">
-<input id="codeInput" maxlength="5" placeholder="Código">
-<button id="join">Entrar</button>
-</div>
-</section>
-
-<section id="lobby" class="panel center stack hidden">
-<div class="muted">SALA</div>
-<div id="roomCode" class="code">-----</div>
-<div id="roomMode" class="muted"></div>
-<div style="text-align:center"><img id="qr" alt="QR Code da sala"></div>
-<button id="copyLink">Copiar convite</button>
-<h2>Jogadores <span id="playerCount">0/4</span></h2>
-<div id="playerList" class="players"></div>
-<button id="start" class="primary">Iniciar partida</button>
-<small id="lobbyHint">Compartilhe o código com seus amigos.</small>
-</section>
-
-<section id="gameScreen">
-<div class="panel hud">
-<div class="row">
-<div>
-<small id="stageText">FASE 1 / 5</small>
-<div id="polymer" class="title">PVC</div>
-<div class="target">Pegue: <b id="monomer">Cloreto de vinila</b></div>
-</div>
-<div style="text-align:right">
-<div id="timer" style="font-size:27px;font-weight:900">22s</div>
-<small>RESTANTE</small>
-</div>
-</div>
-</div>
-<div class="progress" id="progress"></div>
-<canvas id="board"></canvas>
-<div id="bottom"><span id="position">🧪 Preparando...</span><b id="points">⭐ 0 pts</b></div>
-</section>
-
-<section id="results" class="panel stack hidden">
-<div style="font-size:50px;text-align:center">🏆</div>
-<h1 style="text-align:center">Fim de jogo!</h1>
-<div id="ranking" class="players"></div>
-<button id="again" class="primary">Jogar novamente</button>
-<button id="back">Voltar ao início</button>
-</section>
-</div>
-
-<div id="toast" class="hidden"></div>
-<div id="notice" class="hidden"></div>
-<div id="countdown" class="hidden">3</div>
-
-<script src="/socket.io/socket.io.js"></script>
-<script>
-'use strict';
-
-const $ = id => document.getElementById(id);
-const socket = io({reconnection:true});
-const canvas = $('board');
-const ctx = canvas.getContext('2d');
-const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
-
-const DATA = [
-{polymer:'PVC',monomer:'Cloreto de vinila',color:'#34d399',short:['Cloreto','vinila'],mini:'CV'},
-{polymer:'Polietileno',monomer:'Eteno',color:'#60a5fa',short:['Eteno'],mini:'Et'},
-{polymer:'Poliestireno',monomer:'Estireno',color:'#fbbf24',short:['Estireno'],mini:'Es'},
-{polymer:'PTFE (Teflon)',monomer:'Tetrafluoroetileno',color:'#a78bfa',short:['TFE'],mini:'TFE'},
-{polymer:'Polipropileno',monomer:'Propeno',color:'#f472b6',short:['Propeno'],mini:'Pr'}
-];
-
-let mode = 'race';
-let room = null;
-let myId = null;
-let state = 'home';
-let world = null;
-let lastWorldAt = 0;
-let round = 0;
-let localX = .5;
-let visualX = new Map();
-let lastMove = 0;
-let noticeTimer = null;
-let toastTimer = null;
-let token = sessionStorage.getItem('poly_token');
-
-if (!token) {
-  token = 'p_' + Array.from(
-    crypto.getRandomValues(new Uint8Array(18)),
-    x => x.toString(16).padStart(2,'0')
-  ).join('');
-  sessionStorage.setItem('poly_token',token);
-}
-
-$('name').value = localStorage.getItem('poly_name') || '';
-
-function setScreen(next) {
-  state = next;
-  $('home').classList.toggle('hidden',next !== 'home');
-  $('lobby').classList.toggle('hidden',next !== 'lobby');
-  $('gameScreen').classList.toggle('active',next === 'game');
-  $('results').classList.toggle('hidden',next !== 'results');
-  $('leave').classList.toggle('hidden',next === 'home');
-  if (next === 'game') resize();
-}
-
-function notice(msg) {
-  $('notice').textContent = msg;
-  $('notice').classList.remove('hidden');
-  clearTimeout(noticeTimer);
-  noticeTimer = setTimeout(() => $('notice').classList.add('hidden'),3200);
-}
-
-function toast(title,subtitle='') {
-  $('toast').innerHTML = '<strong></strong><div></div>';
-  $('toast').children[0].textContent = title;
-  $('toast').children[1].textContent = subtitle;
-  $('toast').classList.remove('hidden');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $('toast').classList.add('hidden'),2800);
-}
-
-function playerName() {
-  const name = $('name').value.trim().slice(0,18) || 'Cientista';
-  localStorage.setItem('poly_name',name);
-  return name;
-}
-
-function send(event,args,callback) {
-  if (!socket.connected) {
-    notice('Sem conexão com o servidor.');
-    return;
-  }
-
-  socket.timeout(7000).emit(event,args,(err,result) => {
-    if (err) {
-      notice('Servidor demorou para responder.');
-      return;
-    }
-    if (!result?.ok) {
-      notice(result?.error || 'Não foi possível continuar.');
-      return;
-    }
-    if (callback) callback(result);
-  });
-}
-
-$('raceMode').onclick = () => selectMode('race');
-$('arenaMode').onclick = () => selectMode('arena');
-
-function selectMode(m) {
-  mode = m;
-  $('raceMode').classList.toggle('selected',m === 'race');
-  $('arenaMode').classList.toggle('selected',m === 'arena');
-}
-
-$('create').onclick = () => {
-  send('room:create',{mode,token,name:playerName()},res => joined(res.room));
-};
-
-$('join').onclick = () => {
-  const code = $('codeInput').value.toUpperCase()
-    .replace(/[^A-Z0-9]/g,'').slice(0,5);
-
-  if (code.length !== 5) {
-    notice('Digite o código de 5 caracteres.');
-    return;
-  }
-
-  send('room:join',{code,token,name:playerName()},res => joined(res.room));
-};
-
-$('codeInput').oninput = e => {
-  e.target.value = e.target.value.toUpperCase()
-    .replace(/[^A-Z0-9]/g,'').slice(0,5);
-};
-
-function joined(data) {
-  if (!data) return;
-
-  myId = data.youId || myId;
-  room = data;
-  mode = data.mode || mode;
-  round = data.roundId || 0;
-
-  updateRoom(data);
-
-  if (data.state === 'playing' || data.state === 'countdown') {
-    setScreen('game');
-  } else if (data.state === 'finished') {
-    showResults(data.players || []);
-  } else {
-    setScreen('lobby');
-  }
-}
-
-function updateRoom(data) {
-  if (!data) return;
-
-  room = {...room,...data};
-  $('roomCode').textContent = room.code || '-----';
-  $('roomMode').textContent = room.mode === 'arena'
-    ? '⚡ Laboratório compartilhado'
-    : '🏁 Corrida individual';
-
-  $('playerCount').textContent = (room.players?.length || 0) + '/4';
-  $('playerList').replaceChildren();
-
-  (room.players || []).forEach(p => {
-    const item = document.createElement('div');
-    item.className = 'player';
-
-    const left = document.createElement('span');
-    left.textContent =
-      (p.id === myId ? '⭐ ' : '') +
-      p.name +
-      (p.connected ? '' : ' (offline)');
-
-    const right = document.createElement('b');
-    right.textContent = p.id === room.hostId ? 'Líder' : 'Pronto';
-
-    item.append(left,right);
-    $('playerList').append(item);
-  });
-
-  $('start').classList.toggle('hidden',room.hostId !== myId);
-  $('start').disabled = !['lobby','finished'].includes(room.state);
-  $('qr').src = '/api/qr/' + encodeURIComponent(room.code);
-
-  if (room.state === 'playing' || room.state === 'countdown') {
-    if (state !== 'game') setScreen('game');
-  } else if (room.state === 'finished') {
-    if (state === 'game') showResults(room.players || []);
-  } else if (state === 'game') {
-    setScreen('lobby');
-  }
-}
-
-$('start').onclick = () => send('room:start',{},() => notice('Preparando partida...'));
-$('again').onclick = () => send('room:start',{},() => notice('Preparando revanche...'));
-
-function leaveRoom() {
-  socket.emit('room:leave');
-  room = null;
-  world = null;
-  myId = null;
-  history.replaceState(null,'',location.pathname);
-  setScreen('home');
-}
-
-$('leave').onclick = leaveRoom;
-$('back').onclick = leaveRoom;
-
-$('copyLink').onclick = async () => {
-  const link = location.origin + '/?sala=' + room.code;
-
-  try {
-    await navigator.clipboard.writeText(link);
-    notice('Convite copiado!');
-  } catch {
-    prompt('Copie o convite:',link);
-  }
-};
-
-function showResults(players) {
-  $('ranking').replaceChildren();
-
-  const sorted = [...players].sort((a,b) => b.score-a.score);
-
-  sorted.forEach((p,i) => {
-    const item = document.createElement('div');
-    item.className = 'player';
-
-    const name = document.createElement('span');
-    name.textContent = ['🥇 ','🥈 ','🥉 ','4º '][i] + p.name;
-
-    const score = document.createElement('b');
-    score.textContent = p.score + ' pts';
-
-    item.append(name,score);
-    $('ranking').append(item);
-  });
-
-  $('again').classList.toggle('hidden',room?.hostId !== myId);
-  setScreen('results');
-}
-
-socket.on('connect',() => {
-  $('status').textContent = '● Conectado';
-  $('status').classList.add('online');
-
-  if (room?.code) {
-    send('room:join',{
-      code:room.code,
-      token,
-      name:playerName()
-    },res => joined(res.room));
-  }
-});
-
-socket.on('disconnect',() => {
-  $('status').textContent = '● Reconectando';
-  $('status').classList.remove('online');
-});
-
-socket.on('room:joined',joined);
-socket.on('room:info',updateRoom);
-socket.on('room:replaced',() => notice('Esta sessão foi aberta em outra aba.'));
-
-socket.on('game:stage',data => {
-  round = data.roundId;
-  world = null;
-  toast('FASE ' + (data.stage+1),DATA[data.stage]?.polymer || '');
-});
-
-socket.on('game:world',data => {
-  if (room && data.roundId !== room.roundId) {
-    room.roundId = data.roundId;
-  }
-
-  world = data;
-  lastWorldAt = performance.now();
-
-  if (state !== 'game') setScreen('game');
-  updateHud();
-});
-
-socket.on('game:hit',data => {
-  if (data.ok) {
-    toast(data.bonus ? 'COMBO! +15' : 'ACERTOU! +10');
-  } else {
-    toast('ERROU!','-5 pontos');
-  }
-});
-
-socket.on('game:discovery',data => {
-  toast(
-    data.monomer + ' → ' + data.polymer,
-    data.use || 'Polimerização por adição'
-  );
-});
-
-socket.on('game:finished',data => {
-  world = null;
-  showResults(data.players || []);
-});
-
-function updateHud() {
-  if (!world) return;
-
-  const stage = clamp(world.stage || 0,0,4);
-  $('stageText').textContent = 'FASE ' + (stage+1) + ' / 5';
-  $('polymer').textContent = DATA[stage].polymer;
-  $('polymer').style.color = DATA[stage].color;
-  $('monomer').textContent = DATA[stage].monomer;
-  $('timer').textContent = Math.ceil((world.remaining || 0)/1000) + 's';
-
-  $('progress').replaceChildren();
-
-  for (let i=0;i<5;i++) {
-    const bar = document.createElement('span');
-    bar.className = i<=stage ? 'done' : '';
-    $('progress').append(bar);
-  }
-
-  const players = [...(world.players || [])].sort((a,b) => b.score-a.score);
-  const index = players.findIndex(p => p.id === myId);
-  const me = players.find(p => p.id === myId);
-
-  $('position').textContent =
-    '🧪 ' + (world.mode === 'arena' ? 'Laboratório' : 'Corrida') +
-    ' • #' + (index+1);
-
-  $('points').textContent = '⭐ ' + (me?.score || 0) + ' pts';
-}
-
-function resize() {
-  const rect = canvas.getBoundingClientRect();
-  const dpr = Math.min(window.devicePixelRatio || 1,2);
-
-  const w = Math.max(1,Math.round(rect.width*dpr));
-  const h = Math.max(1,Math.round(rect.height*dpr));
-
-  if (canvas.width !== w || canvas.height !== h) {
-    canvas.width = w;
-    canvas.height = h;
-  }
-
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  return {w:rect.width,h:rect.height};
-}
-
-function rounded(x,y,w,h,r) {
-  r = Math.min(r,w/2,h/2);
-  ctx.beginPath();
-  ctx.roundRect(x,y,w,h,r);
-}
-
-function laneBackground(r,highlight=false) {
-  ctx.fillStyle = highlight ? '#0b303b' : '#0b2536';
-  ctx.strokeStyle = highlight ? '#55e6cb' : '#3a6579';
-  ctx.lineWidth = highlight ? 2.5 : 1.4;
-
-  rounded(r.x,r.y,r.w,r.h,12);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.save();
-  rounded(r.x+2,r.y+2,r.w-4,r.h-4,10);
-  ctx.clip();
-
-  ctx.strokeStyle = '#ffffff09';
-  ctx.lineWidth = 1;
-
-  for (let x=r.x+25;x<r.x+r.w;x+=27) {
-    ctx.beginPath();
-    ctx.moveTo(x,r.y);
-    ctx.lineTo(x,r.y+r.h);
-    ctx.stroke();
-  }
-
-  for (let y=r.y+35;y<r.y+r.h;y+=35) {
-    ctx.beginPath();
-    ctx.moveTo(r.x,y);
-    ctx.lineTo(r.x+r.w,y);
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
-function drawBeaker(x,y,size,color) {
-  ctx.save();
-  ctx.translate(x,y);
-
-  ctx.lineWidth = 2.6;
-  ctx.strokeStyle = color;
-  ctx.shadowColor = color;
-  ctx.shadowBlur = 9;
-  ctx.fillStyle = color + '55';
-
-  ctx.beginPath();
-  ctx.moveTo(-size*.36,-size*.38);
-  ctx.lineTo(-size*.30,size*.35);
-  ctx.quadraticCurveTo(-size*.27,size*.46,-size*.15,size*.46);
-  ctx.lineTo(size*.15,size*.46);
-  ctx.quadraticCurveTo(size*.27,size*.46,size*.30,size*.35);
-  ctx.lineTo(size*.36,-size*.38);
-  ctx.stroke();
-
-  ctx.shadowBlur = 0;
-  ctx.fillRect(-size*.23,size*.12,size*.46,size*.24);
-  ctx.restore();
-}
-
-function drawMolecule(r,d,latency,mini=false) {
-  const info = DATA[d.idx] || DATA[0];
-
-  // Bolinhas circulares, sem cápsulas largas.
-  const radius = mini
-    ? clamp(Math.min(r.w,r.h)*.105,9,16)
-    : clamp(Math.min(r.w*.095,r.h*.07),17,29);
-
-  const x = r.x + clamp(d.x,0,1)*r.w;
-  const y = r.y + (d.y+(d.vy||0)*latency)*r.h;
-
-  if (y < r.y-radius || y > r.y+r.h+radius) return;
-
-  ctx.save();
-  rounded(r.x+2,r.y+2,r.w-4,r.h-4,10);
-  ctx.clip();
-
-  ctx.shadowColor = info.color;
-  ctx.shadowBlur = mini ? 5 : 10;
-  ctx.fillStyle = '#173647';
-  ctx.strokeStyle = info.color;
-  ctx.lineWidth = mini ? 1.5 : 2.5;
-
-  ctx.beginPath();
-  ctx.arc(x,y,radius,0,Math.PI*2);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.shadowBlur = 0;
-
-  const lines = mini ? [info.mini] : info.short;
-
-  let font = mini
-    ? clamp(radius*.68,7,9)
-    : clamp(radius*.38,8,11);
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 ' + font + 'px system-ui';
-
-  while (
-    lines.some(t => ctx.measureText(t).width > radius*1.78)
-    && font > 6
-  ) {
-    font -= .3;
-    ctx.font = '900 ' + font + 'px system-ui';
-  }
-
-  lines.forEach((line,i) => {
-    ctx.fillText(
-      line,
-      x,
-      y+(i-(lines.length-1)/2)*font*1.05
-    );
-  });
-
-  ctx.restore();
-}
-
-function drawLane(r,p,drops,latency,mini=false,highlight=false) {
-  laneBackground(r,highlight);
-
-  ctx.save();
-  rounded(r.x+2,r.y+2,r.w-4,r.h-4,10);
-  ctx.clip();
-
-  const head = mini ? 22 : 29;
-
-  ctx.fillStyle = '#061d2bdd';
-  ctx.fillRect(r.x+5,r.y+5,r.w-10,head);
-
-  ctx.font = '800 ' + (mini?10:13) + 'px system-ui';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = p?.color || '#fff';
-  ctx.textAlign = 'left';
-
-  ctx.fillText(
-    p?.id === myId ? 'VOCÊ' : (p?.name || 'AGUARDANDO'),
-    r.x+12,
-    r.y+head/2+5,
-    Math.max(25,r.w-68)
-  );
-
-  ctx.fillStyle = '#f5d67d';
-  ctx.textAlign = 'right';
-  ctx.fillText(
-    (p?.score || 0)+' pts',
-    r.x+r.w-10,
-    r.y+head/2+5
-  );
-
-  ctx.restore();
-
-  if (!p) {
-    ctx.fillStyle = '#7495a3';
-    ctx.textAlign = 'center';
-    ctx.font = '700 13px system-ui';
-    ctx.fillText('Pista livre',r.x+r.w/2,r.y+r.h/2);
-    return;
-  }
-
-  for (const d of drops || []) {
-    drawMolecule(r,d,latency,mini);
-  }
-
-  const key = p.id;
-  const target = p.id === myId ? localX : clamp(p.x || .5,0,1);
-  const previous = visualX.has(key) ? visualX.get(key) : target;
-  const x = previous+(target-previous)*.25;
-
-  visualX.set(key,x);
-
-  drawBeaker(
-    r.x+x*r.w,
-    r.y+r.h-(mini?19:25),
-    mini?25:39,
-    p.color || '#5eead4'
-  );
-}
-
-function drawArena(r,players,drops,latency) {
-  laneBackground(r,true);
-
-  for (const d of drops || []) {
-    drawMolecule(r,d,latency,false);
-  }
-
-  players.forEach(p => {
-    const target = p.id === myId
-      ? localX
-      : clamp(p.x || .5,0,1);
-
-    const old = visualX.has(p.id)
-      ? visualX.get(p.id)
-      : target;
-
-    const x = old+(target-old)*.25;
-    visualX.set(p.id,x);
-
-    drawBeaker(
-      r.x+x*r.w,
-      r.y+r.h-26,
-      35,
-      p.color || '#5eead4'
-    );
-  });
-
-  ctx.fillStyle = '#061d2bdb';
-  rounded(r.x+7,r.y+7,r.w-14,32,8);
-  ctx.fill();
-
-  ctx.font = '800 11px system-ui';
-  ctx.textBaseline = 'middle';
-
-  players.forEach((p,i) => {
-    ctx.fillStyle = p.color || '#fff';
-
-    const x = r.x+14+(i%2)*(r.w/2);
-    const y = r.y+23;
-
-    const label =
-      (p.id === myId ? 'VOCÊ' : p.name) +
-      ' ' + p.score;
-
-    ctx.fillText(label,x,y,Math.max(35,r.w/2-22));
-  });
-}
-
-function render(t) {
-  requestAnimationFrame(render);
-
-  if (state !== 'game') return;
-
-  const {w,h} = resize();
-  ctx.clearRect(0,0,w,h);
-
-  if (!world) return;
-
-  const latency = clamp((t-lastWorldAt)/1000,0,.12);
-  const players = world.players || [];
-  const me = players.find(p => p.id === myId);
-  const others = players.filter(p => p.id !== myId);
-  const pad = 8;
-
-  if (world.mode === 'arena') {
-    drawArena(
-      {x:pad,y:pad,w:w-pad*2,h:h-pad*2},
-      players,
-      world.drops || [],
-      latency
-    );
-    return;
-  }
-
-  // Pista principal maior.
-  const mainHeight = h*.72;
-  const main = {
-    x:pad,
-    y:pad,
-    w:w-pad*2,
-    h:mainHeight-pad*2
-  };
-
-  drawLane(
-    main,
-    me,
-    world.lanes?.[myId] || [],
-    latency,
-    false,
-    true
-  );
-
-  // Três pistas menores para acompanhar os adversários.
-  const bottomY = mainHeight+pad;
-  const miniHeight = h-bottomY-pad;
-  const gap = 6;
-  const miniWidth = (w-pad*2-gap*2)/3;
-
-  for (let i=0;i<3;i++) {
-    const r = {
-      x:pad+i*(miniWidth+gap),
-      y:bottomY,
-      w:miniWidth,
-      h:miniHeight
-    };
-
-    const p = others[i];
-
-    drawLane(
-      r,
-      p,
-      p ? world.lanes?.[p.id] || [] : [],
-      latency,
-      true,
-      false
-    );
-  }
-}
-
-// ==================================================
-// CONTROLE DE TOQUE CORRIGIDO
-// ==================================================
-
-let dragging = false;
-let activePointerId = null;
-
-function move(clientX,force=false) {
-  if (state !== 'game' || !world) return;
-
-  const rect = canvas.getBoundingClientRect();
-  if (!rect.width) return;
-
-  // Usa somente a posição horizontal do dedo.
-  // A posição vertical NÃO limita o movimento.
-  const x = (clientX-rect.left)/rect.width;
-  localX = clamp(x,.045,.955);
-
-  const now = performance.now();
-
-  // Envia atualizações ao servidor a até 50 Hz.
-  if ((force || now-lastMove >= 20) && socket.connected) {
-    socket.emit('game:move',localX);
-    lastMove = now;
-  }
-}
-
-canvas.addEventListener('pointerdown',e => {
-  if (state !== 'game' || !world) return;
-
-  // Não inicia outro arrasto enquanto um já está ativo.
-  if (dragging) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const y = (e.clientY-rect.top)/rect.height;
-
-  // Na corrida, o toque deve COMEÇAR na pista principal.
-  // Depois pode sair dela livremente.
-  if (world.mode === 'race' && y > .72) return;
-
-  dragging = true;
-  activePointerId = e.pointerId;
-
-  // Captura o ponteiro para continuar recebendo
-  // movimentos mesmo quando o dedo sai do canvas.
-  try {
-    canvas.setPointerCapture(e.pointerId);
-  } catch {}
-
-  move(e.clientX,true);
-  e.preventDefault();
-});
-
-canvas.addEventListener('pointermove',e => {
-  if (!dragging || e.pointerId !== activePointerId) return;
-
-  // Funciona mesmo abaixo, acima ou nas laterais da pista.
-  move(e.clientX);
-  e.preventDefault();
-});
-
-function stopDragging(e) {
-  if (e.pointerId !== activePointerId) return;
-
-  // Envia a última posição antes de soltar.
-  if (e.type === 'pointerup') {
-    move(e.clientX,true);
-  }
-
-  dragging = false;
-  activePointerId = null;
-
-  try {
-    if (canvas.hasPointerCapture(e.pointerId)) {
-      canvas.releasePointerCapture(e.pointerId);
-    }
-  } catch {}
-}
-
-canvas.addEventListener('pointerup',stopDragging);
-canvas.addEventListener('pointercancel',stopDragging);
-
-canvas.addEventListener('lostpointercapture',() => {
-  dragging = false;
-  activePointerId = null;
-});
-
-// Controle pelo teclado continua funcionando.
-window.addEventListener('keydown',e => {
-  if (state !== 'game') return;
-
-  if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
-    localX = clamp(localX-.045,.045,.955);
-  } else if (
-    e.key === 'ArrowRight' ||
-    e.key.toLowerCase() === 'd'
-  ) {
-    localX = clamp(localX+.045,.045,.955);
-  } else {
-    return;
-  }
-
-  e.preventDefault();
-
-  if (socket.connected) {
-    socket.emit('game:move',localX);
-  }
-});
-
-// ==================================================
-// CONTAGEM REGRESSIVA
-// ==================================================
-
-function countdownLoop() {
-  if (room?.state === 'countdown') {
-    const n = Math.max(
-      1,
-      Math.ceil((room.countdownUntil-Date.now())/1000)
-    );
-
-    $('countdown').textContent = n;
-    $('countdown').classList.remove('hidden');
-  } else {
-    $('countdown').classList.add('hidden');
-  }
-
-  requestAnimationFrame(countdownLoop);
-}
-
-const urlRoom = new URLSearchParams(location.search).get('sala');
-
-if (urlRoom) {
-  $('codeInput').value = urlRoom.toUpperCase().slice(0,5);
-}
-
-requestAnimationFrame(render);
-requestAnimationFrame(countdownLoop);
-
-</script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#071523" />
+    <title>PolyDrop • Reação Surpresa v7</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #071523;
+        --text: #edf9ff;
+        --muted: #9bb7c6;
+        --mint: #5eead4;
+        --aqua: #38bdf8;
+        --line: #3c6572;
+        --glass: #112b3bcf;
+        --pink: #fb7185;
+        --gold: #fbbf24;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      body {
+        overflow-x: hidden;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.46;
+      }
+      button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid #81e5f3;
+        outline-offset: 3px;
+      }
+      button:active:not(:disabled) {
+        transform: translateY(1px);
+      }
+      .background {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        background:
+          radial-gradient(ellipse at 10% 5%, #183e50 0%, transparent 48%),
+          radial-gradient(ellipse at 94% 95%, #103b42 0%, transparent 50%),
+          linear-gradient(155deg, #071523, #0e2636 62%, #081925);
+      }
+      .background::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(#9ed5d40a 1px, transparent 1px),
+          linear-gradient(90deg, #9ed5d40a 1px, transparent 1px);
+        background-size: 44px 44px;
+        mask-image: linear-gradient(to bottom, #0008, transparent);
+      }
+      .atom {
+        position: absolute;
+        width: 170px;
+        height: 170px;
+        border: 1px solid #6ee7b740;
+        border-radius: 50%;
+        opacity: 0.32;
+        transform: rotate(-30deg);
+      }
+      .atom:before,
+      .atom:after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 1px solid #67e8f940;
+        border-radius: 50%;
+        transform: rotate(60deg) scaleX(0.42);
+      }
+      .atom:after {
+        transform: rotate(-60deg) scaleX(0.42);
+      }
+      .a1 {
+        left: -40px;
+        top: 25%;
+      }
+      .a2 {
+        right: -35px;
+        bottom: 12%;
+        transform: scale(0.85) rotate(40deg);
+      }
+      #app {
+        position: relative;
+        z-index: 1;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+      #app.game-active {
+        height: 100dvh;
+        overflow: hidden;
+      }
+      .topbar {
+        width: min(1150px, calc(100% - 36px));
+        margin: 0 auto;
+        padding: 20px 0 13px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 950;
+        font-size: 23px;
+        letter-spacing: -1.25px;
+        color: #effffc;
+      }
+      .brand-icon {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border: 1px solid #5eead47d;
+        border-radius: 15px;
+        background: linear-gradient(155deg, #1d6365, #1d4655);
+        box-shadow: 0 4px 20px #0a5f5d40;
+        font-size: 23px;
+      }
+      .brand strong {
+        color: #6ee7d6;
+      }
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        background: #112a38ab;
+        padding: 9px 11px;
+        border: 1px solid #43617165;
+        border-radius: 12px;
+      }
+      .status i {
+        background: #fbbf24;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        box-shadow: 0 0 8px #fbbf24;
+      }
+      .status.online i {
+        background: #4ade80;
+        box-shadow: 0 0 8px #4ade80;
+      }
+      .status.offline i {
+        background: #fb7185;
+        box-shadow: 0 0 8px #fb7185;
+      }
+      .screen {
+        display: none;
+      }
+      .screen.active {
+        display: block;
+      }
+      .screen.active.home {
+        display: grid;
+      }
+      .container {
+        width: min(1080px, calc(100% - 32px));
+        margin: auto;
+      }
+      .home {
+        padding: 38px 0 50px;
+        grid-template-columns: 1.02fr 0.98fr;
+        gap: 40px;
+        align-items: center;
+        min-height: calc(100dvh - 97px);
+      }
+      .eyebrow {
+        text-transform: uppercase;
+        color: #80e7d7;
+        letter-spacing: 2.5px;
+        font-size: 12px;
+        font-weight: 850;
+      }
+      .hero-title {
+        font-size: clamp(45px, 7.5vw, 79px);
+        line-height: 1.03;
+        margin: 14px 0 17px;
+        letter-spacing: -4px;
+        font-weight: 950;
+      }
+      .hero-title span {
+        background: linear-gradient(110deg, #5eead4, #7dd3fc);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero-desc {
+        color: #aac6d2;
+        font-size: 17px;
+        line-height: 1.7;
+        max-width: 460px;
+      }
+      .feature-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 24px;
+      }
+      .feature {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: #163544af;
+        border: 1px solid #3659678c;
+        padding: 8px 11px;
+        border-radius: 11px;
+        font-weight: 750;
+        font-size: 12px;
+        color: #d0e9ee;
+      }
+      .decor {
+        margin-top: 30px;
+        width: 360px;
+        max-width: 100%;
+        position: relative;
+        height: 150px;
+      }
+      .mol {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #142e40;
+        border: 3px solid currentColor;
+        box-shadow: 0 0 22px #3fbfb439;
+        font-weight: 850;
+        font-size: 12px;
+        text-align: center;
+        line-height: 1.25;
+      }
+      .mol.one {
+        width: 90px;
+        height: 90px;
+        left: 2px;
+        top: 22px;
+        color: #60a5fa;
+        transform: rotate(-10deg);
+      }
+      .mol.two {
+        width: 80px;
+        height: 80px;
+        left: 132px;
+        top: 50px;
+        color: #34d399;
+        transform: rotate(9deg);
+      }
+      .mol.three {
+        width: 100px;
+        height: 100px;
+        right: 12px;
+        top: 0;
+        color: #fbbf24;
+        transform: rotate(-5deg);
+      }
+      .bond {
+        position: absolute;
+        height: 2px;
+        background: #8ad8d885;
+        transform-origin: left;
+      }
+      .bond.b1 {
+        width: 75px;
+        top: 92px;
+        left: 82px;
+        transform: rotate(12deg);
+      }
+      .bond.b2 {
+        width: 95px;
+        top: 79px;
+        left: 203px;
+        transform: rotate(-32deg);
+      }
+      .panel {
+        background: linear-gradient(160deg, #19394be8, #0d2635ef);
+        border: 1px solid #53768690;
+        border-radius: 26px;
+        box-shadow:
+          0 24px 75px #0006,
+          inset 0 1px #a2d7d111;
+        padding: clamp(19px, 3.7vw, 30px);
+        backdrop-filter: blur(18px);
+      }
+      .panel h2 {
+        font-size: 24px;
+        letter-spacing: -0.9px;
+        margin: 4px 0 6px;
+      }
+      .panel p {
+        color: var(--muted);
+        line-height: 1.5;
+        margin: 5px 0 15px;
+        font-size: 13px;
+      }
+      .small-label {
+        display: block;
+        color: #b8d8de;
+        font-size: 12px;
+        font-weight: 850;
+        margin: 16px 0 7px;
+      }
+      .input {
+        width: 100%;
+        border: 1px solid #547181;
+        background: #081b2b;
+        color: white;
+        padding: 13px 14px;
+        border-radius: 12px;
+        outline: 0;
+      }
+      .input::placeholder {
+        color: #718f9e;
+      }
+      .input:focus {
+        border-color: #5eead4;
+      }
+      .mode-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+      }
+      .mode {
+        border: 1px solid #436777;
+        background: #0d2635;
+        color: white;
+        border-radius: 14px;
+        text-align: left;
+        padding: 14px 12px;
+        min-height: 116px;
+        transition:
+          border-color 0.12s,
+          background 0.12s;
+      }
+      .mode.selected {
+        background: #154643;
+        border: 2px solid #5eead4;
+        padding: 13px 11px;
+        box-shadow: inset 0 0 15px #5eead411;
+      }
+      .mode-icon {
+        font-size: 23px;
+        display: block;
+        margin-bottom: 5px;
+      }
+      .mode b {
+        display: block;
+        font-size: 13px;
+      }
+      .mode small {
+        display: block;
+        font-size: 11px;
+        color: #9dbcc6;
+        margin-top: 6px;
+        line-height: 1.4;
+      }
+      .primary {
+        width: 100%;
+        border: 0;
+        border-radius: 13px;
+        padding: 14px 16px;
+        color: #062a33;
+        background: linear-gradient(115deg, #5eead4, #67d9f6);
+        font-size: 15px;
+        font-weight: 950;
+        box-shadow: 0 6px 26px #22bba52e;
+      }
+      .primary:hover:enabled {
+        filter: brightness(1.08);
+      }
+      .secondary {
+        border: 1px solid #52798b;
+        border-radius: 11px;
+        padding: 12px 14px;
+        color: #ebfbff;
+        background: #193a4c;
+        font-weight: 800;
+      }
+      .secondary:hover {
+        background: #235164;
+      }
+      .join {
+        display: flex;
+        gap: 8px;
+      }
+      .join .input {
+        min-width: 0;
+        flex: 1;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-weight: 850;
+      }
+      .join button {
+        white-space: nowrap;
+      }
+      .divider-text {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 20px 0 8px;
+        color: #92adbc;
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .divider-text:before,
+      .divider-text:after {
+        content: "";
+        height: 1px;
+        background: #47657277;
+        flex: 1;
+      }
+      .lobby {
+        padding: 20px 0 44px;
+      }
+      .lobby-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 21px;
+      }
+      .lobby-head h1,
+      .results h1 {
+        font-size: clamp(30px, 5vw, 49px);
+        margin: 7px 0;
+        font-weight: 950;
+        letter-spacing: -2px;
+      }
+      .lobby-head p {
+        color: var(--muted);
+        margin: 0;
+      }
+      .lobby-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 20px;
+      }
+      .section-title {
+        font-size: 17px;
+        margin: 0 0 17px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .badge {
+        font-size: 11px;
+        background: #145048;
+        color: #94f0dd;
+        padding: 5px 10px;
+        border-radius: 8px;
+        letter-spacing: 0.2px;
+      }
+      .room-code {
+        border: 1px dashed #71c8ccaa;
+        border-radius: 17px;
+        background: #0a2434;
+        text-align: center;
+        padding: 17px;
+      }
+      .room-code .mini {
+        font-size: 12px;
+        color: #9cbac9;
+      }
+      .code-big {
+        font-size: clamp(38px, 7vw, 59px);
+        letter-spacing: 6px;
+        font-weight: 950;
+        margin: 6px 0 0;
+        color: #9cf1e5;
+      }
+      .qr-shell {
+        display: flex;
+        justify-content: center;
+        margin-top: 18px;
+      }
+      .qr-shell img {
+        background: white;
+        padding: 10px;
+        width: 158px;
+        height: 158px;
+        border-radius: 17px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .helper {
+        text-align: center;
+        font-size: 12px;
+        color: #9ebbc5;
+        margin-top: 10px;
+      }
+      .action-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+        margin-top: 12px;
+      }
+      .roster {
+        display: grid;
+        gap: 9px;
+      }
+      .person {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid #3a5e6d;
+        background: #0c2635;
+        border-radius: 12px;
+        padding: 11px 12px;
+        min-height: 54px;
+      }
+      .avatar {
+        border-radius: 10px;
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        font-size: 15px;
+        font-weight: 950;
+        background: color-mix(in srgb, var(--avatar), transparent 75%);
+        color: var(--avatar);
+        border: 1px solid color-mix(in srgb, var(--avatar), transparent 35%);
+      }
+      .person-name {
+        font-weight: 850;
+        font-size: 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .person-label {
+        margin-left: auto;
+        font-size: 10px;
+        color: #9abac8;
+      }
+      .placeholder {
+        color: #84a6b4;
+        font-size: 13px;
+        border: 1px dashed #385d6b;
+        padding: 18px;
+        border-radius: 12px;
+        text-align: center;
+      }
+      .host-help {
+        border: 1px solid #325d67;
+        background: #133843;
+        padding: 11px 13px;
+        border-radius: 10px;
+        font-size: 12px;
+        color: #b6d7dc;
+        line-height: 1.5;
+        margin-top: 13px;
+      }
+      .game-shell {
+        display: none;
+        flex: 1;
+        min-height: 0;
+        width: min(1210px, 100%);
+        margin: 0 auto;
+        padding: 0 15px 13px;
+        gap: 12px;
+      }
+      .game-shell.active {
+        display: flex;
+      }
+      .game-main {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+        flex: 1;
+        gap: 10px;
+      }
+      .game-hud {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 13px;
+        padding: 13px 17px;
+        border: 1px solid #3c6373;
+        background: #102b3cdd;
+        border-radius: 16px;
+      }
+      .game-target {
+        min-width: 0;
+      }
+      .game-target .small {
+        font-weight: 850;
+        color: #9abec7;
+        font-size: 10px;
+        letter-spacing: 1.6px;
+      }
+      .game-target h2 {
+        font-size: clamp(17px, 3vw, 25px);
+        margin: 3px 0 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .game-target .mono {
+        color: #d0ecf2;
+        font-size: 12px;
+        margin-top: 3px;
+      }
+      .game-timer {
+        text-align: right;
+        flex-shrink: 0;
+      }
+      .game-timer b {
+        font-size: 23px;
+        font-variant-numeric: tabular-nums;
+      }
+      .game-timer div {
+        font-size: 10px;
+        color: #9fc2cb;
+      }
+      .progress-row {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .progress-cell {
+        height: 6px;
+        background: #3d5769;
+        border-radius: 30px;
+        flex: 1;
+        transition: background 0.2s;
+      }
+      .progress-cell.complete {
+        background: #5eead4;
+      }
+      .progress-cell.current {
+        background: #fbbf24;
+      }
+      .board {
+        flex: 1;
+        position: relative;
+        min-height: 300px;
+        border: 1px solid #4a748294;
+        border-radius: 20px;
+        overflow: hidden;
+        background: linear-gradient(170deg, #10283b88, #0a213085);
+        touch-action: none;
+        user-select: none;
+        box-shadow:
+          inset 0 0 70px #061520,
+          0 8px 30px #0003;
+      }
+      #canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .board-label {
+        position: absolute;
+        bottom: 8px;
+        left: 12px;
+        font-size: 10px;
+        color: #b7d6ddaa;
+        pointer-events: none;
+      }
+      .board .float {
+        position: absolute;
+        left: 50%;
+        top: 35%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: clamp(35px, 9vw, 82px);
+        font-weight: 950;
+        text-shadow: 0 6px 40px #020f1d;
+        pointer-events: none;
+        white-space: nowrap;
+        z-index: 3;
+      }
+      .float.hidden {
+        display: none;
+      }
+      .hintbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border: 1px solid #315c69;
+        border-radius: 12px;
+        background: #102c3a9c;
+        font-size: 12px;
+      }
+      .hintbar strong {
+        color: #89e9d8;
+      }
+      .score-mini {
+        white-space: nowrap;
+        font-weight: 950;
+        color: #fde68a;
+      }
+      .scoreboard {
+        width: 245px;
+        flex-shrink: 0;
+        border-radius: 17px;
+        background: #102b3cde;
+        border: 1px solid #3d6573;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding: 15px;
+      }
+      .scoreboard h3 {
+        font-size: 15px;
+        margin: 0 0 14px;
+      }
+      .scoreboard .entries {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        overflow: auto;
+      }
+      .rank {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+        border-radius: 10px;
+        padding: 9px 8px;
+        background: #173747a8;
+      }
+      .rank.me {
+        background: #20504b;
+        border: 1px solid #4cc9b5;
+      }
+      .rank .num {
+        color: #afcbd2;
+        font-weight: 950;
+        min-width: 18px;
+        font-size: 12px;
+      }
+      .rank .name {
+        font-size: 12px;
+        font-weight: 800;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        flex: 1;
+      }
+      .rank .points {
+        font-size: 12px;
+        color: #fde68a;
+        font-weight: 950;
+      }
+      .scoreboard .info {
+        margin-top: auto;
+        padding-top: 18px;
+        font-size: 11px;
+        color: #9dbdc6;
+        line-height: 1.7;
+      }
+      .scoreboard .info b {
+        color: #d6f9f6;
+      }
+      .discovery {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-12px);
+        max-width: min(440px, calc(100% - 20px));
+        width: fit-content;
+        min-width: min(320px, calc(100% - 20px));
+        border: 1px solid #6befd7;
+        background: #103940f5;
+        border-radius: 16px;
+        padding: 14px 40px 13px 17px;
+        z-index: 6;
+        box-shadow: 0 15px 60px #0009;
+        opacity: 0;
+        transition:
+          opacity 0.2s,
+          transform 0.2s;
+        pointer-events: none;
+      }
+      .discovery.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+        pointer-events: auto;
+      }
+      .discovery .hint {
+        color: #90edd8;
+        font-weight: 900;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .discovery h4 {
+        margin: 5px 0;
+        color: white;
+        font-size: 17px;
+      }
+      .discovery .equation {
+        font-size: 13px;
+        font-weight: 900;
+        color: #7dd3fc;
+        overflow-wrap: anywhere;
+        margin-top: 7px;
+      }
+      .discovery p {
+        font-size: 12px;
+        color: #d0e9e8;
+        margin: 7px 0 0;
+        line-height: 1.45;
+      }
+      .discovery button {
+        position: absolute;
+        right: 9px;
+        top: 9px;
+        border: none;
+        background: #275965;
+        color: white;
+        width: 29px;
+        height: 29px;
+        border-radius: 9px;
+        font-size: 18px;
+      }
+      .feedback {
+        position: absolute;
+        top: 42%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 27px;
+        font-weight: 950;
+        text-shadow: 0 3px 16px #000;
+        pointer-events: none;
+        z-index: 5;
+        opacity: 0;
+      }
+      .feedback.show {
+        animation: feedback 0.75s ease-out forwards;
+      }
+      @keyframes feedback {
+        0% {
+          transform: translate(-50%, -35%) scale(0.75);
+          opacity: 0;
+        }
+        20% {
+          opacity: 1;
+        }
+        100% {
+          transform: translate(-50%, -110%) scale(1.12);
+          opacity: 0;
+        }
+      }
+      .results {
+        padding: 30px 0 50px;
+        max-width: 760px;
+      }
+      .podium {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin: 26px 0;
+      }
+      .podium-person {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        border: 1px solid #476879;
+        background: linear-gradient(165deg, #1d3f50, #10283a);
+        border-radius: 16px;
+        padding: 16px 8px;
+        min-width: 0;
+      }
+      .podium-person.first {
+        background: linear-gradient(165deg, #504224, #192d39);
+        border-color: #cba95c;
+      }
+      .podium-person .medal {
+        font-size: 32px;
+      }
+      .podium-person strong {
+        font-size: 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        white-space: nowrap;
+      }
+      .podium-person .pts {
+        font-size: 22px;
+        font-weight: 950;
+        color: #ffdd8b;
+      }
+      .results .list {
+        margin: 20px 0;
+      }
+      .result-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-bottom: 1px solid #43617066;
+        font-size: 13px;
+      }
+      .result-row b {
+        color: #f9e49a;
+      }
+      .end-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .end-actions > * {
+        flex: 1;
+      }
+      .error {
+        margin-top: 11px;
+        color: #ffd0d6;
+        font-size: 12px;
+        font-weight: 800;
+        min-height: 16px;
+      }
+      .footer {
+        color: #547987;
+        text-align: center;
+        font-size: 11px;
+        padding: 10px 0 18px;
+      }
+      .hide {
+        display: none !important;
+      }
+      @media (max-width: 800px) {
+        .home {
+          grid-template-columns: 1fr;
+          gap: 12px;
+          padding-top: 24px;
+          min-height: unset;
+        }
+        .hero-title {
+          font-size: 51px;
+        }
+        .decor {
+          height: 115px;
+          margin-top: 7px;
+          transform: scale(0.8);
+          transform-origin: left top;
+        }
+        .lobby-layout {
+          grid-template-columns: 1fr;
+        }
+        .scoreboard {
+          width: 175px;
+        }
+        .scoreboard .info {
+          font-size: 10px;
+        }
+      }
+      @media (max-width: 620px) {
+        .topbar {
+          padding: 11px 0;
+          width: calc(100% - 22px);
+        }
+        .brand {
+          font-size: 20px;
+        }
+        .brand-icon {
+          width: 37px;
+          height: 37px;
+        }
+        .home {
+          padding: 16px 0 40px;
+        }
+        .hero-title {
+          letter-spacing: -2.5px;
+          font-size: 45px;
+        }
+        .hero-desc {
+          font-size: 14px;
+        }
+        .decor {
+          display: none;
+        }
+        .panel {
+          border-radius: 20px;
+        }
+        .lobby {
+          padding-top: 4px;
+        }
+        .lobby-head {
+          flex-wrap: wrap;
+        }
+        .lobby-head h1 {
+          font-size: 30px;
+        }
+        .game-shell {
+          flex-direction: column;
+          padding: 0 8px 8px;
+          gap: 6px;
+        }
+        .game-hud {
+          padding: 10px 12px;
+          border-radius: 12px;
+        }
+        .game-target h2 {
+          font-size: 17px;
+        }
+        .game-target .mono {
+          font-size: 11px;
+        }
+        .game-timer b {
+          font-size: 20px;
+        }
+        .scoreboard {
+          display: none;
+        }
+        .board {
+          min-height: 180px;
+          border-radius: 14px;
+        }
+        .hintbar {
+          font-size: 10px;
+          padding: 8px 10px;
+        }
+        .discovery {
+          top: 8px;
+          padding: 10px 34px 10px 12px;
+        }
+        .discovery h4 {
+          font-size: 14px;
+        }
+        .discovery .equation {
+          font-size: 11px;
+        }
+        .discovery p {
+          font-size: 11px;
+        }
+        .result-row {
+          font-size: 12px;
+        }
+        .podium-person .pts {
+          font-size: 17px;
+        }
+        .podium-person strong {
+          font-size: 12px;
+        }
+        .footer {
+          display: none;
+        }
+      }
+      @media (max-height: 690px) and (max-width: 620px) {
+        .game-hud {
+          padding: 7px 11px;
+        }
+        .hintbar {
+          padding: 6px 10px;
+        }
+        .board-label {
+          display: none;
+        }
+      }
+      .reconnect-notice.hidden {
+        display: none;
+      }
+      .reconnect-notice {
+        position: absolute;
+        inset: auto 12px 22px;
+        z-index: 9;
+        text-align: center;
+        border: 1px solid #fbbf2499;
+        border-radius: 13px;
+        background: #1b3342ee;
+        color: #ffe7a0;
+        font-weight: 850;
+        padding: 12px;
+        pointer-events: none;
+      }
+      @media (max-width: 620px) {
+        .hero-desc {
+          margin: 8px 0;
+        }
+        .feature-row {
+          margin-top: 10px;
+        }
+        .home {
+          gap: 8px;
+        }
+        .home .panel {
+          padding: 17px;
+        }
+        .mode {
+          min-height: 92px;
+        }
+        .mode small {
+          font-size: 10px;
+        }
+        .panel p {
+          margin-bottom: 9px;
+        }
+        .lobby-head {
+          margin-bottom: 12px;
+        }
+        .host-help {
+          font-size: 11px;
+          padding: 8px;
+        }
+        .discovery {
+          width: min(340px, calc(100% - 16px));
+          min-width: 0;
+        }
+        .discovery p {
+          line-height: 1.3;
+        }
+        .game-hud .small {
+          font-size: 9px;
+        }
+      }
+
+      /* PolyDrop v4 • corrida com pista principal e 3 miniaturas; arena única compartilhada. */
+      /* Quadro principal recebe mais espaço; o destaque não tapa as moléculas. */
+      .four-lanes {
+        background: #091d2a;
+        contain: layout paint;
+      }
+      .four-lanes canvas {
+        touch-action: none;
+      }
+      body.poly-controls {
+        touch-action: none;
+        overscroll-behavior: none;
+      }
+      .four-lanes .board-label {
+        bottom: 7px;
+        left: 13px;
+        color: #a4d6ddaa;
+        font-size: 10px;
+      }
+      .four-lanes.race-view .float {
+        left: 35%;
+        top: 43%;
+        font-size: clamp(34px, 5vw, 60px);
+      }
+      .four-lanes.race-view .feedback {
+        left: 35%;
+        top: 34%;
+        font-size: 24px;
+      }
+      .four-lanes.arena-view .float,
+      .four-lanes.arena-view .feedback {
+        left: 50%;
+        top: 45%;
+      }
+      .four-lanes .discovery {
+        top: 10px;
+        left: 50%;
+        max-width: min(390px, calc(100% - 16px));
+      }
+      @media (max-width: 690px) {
+        .game-shell {
+          padding: 0 5px 5px;
+          gap: 5px;
+        }
+        .game-main {
+          gap: 5px;
+        }
+        .game-hud {
+          padding: 7px 10px;
+        }
+        .game-target h2 {
+          font-size: 16px;
+        }
+        .game-target .mono {
+          font-size: 10px;
+        }
+        .game-target .small {
+          font-size: 9px;
+        }
+        .game-timer b {
+          font-size: 19px;
+        }
+        .progress-cell {
+          height: 4px;
+        }
+        .hintbar {
+          padding: 6px 8px;
+        }
+        .four-lanes .board-label {
+          display: none;
+        }
+        .four-lanes.race-view .float {
+          left: 50%;
+          top: 31%;
+          font-size: 32px;
+        }
+        .four-lanes.race-view .feedback {
+          left: 50%;
+          top: 36%;
+          font-size: 19px;
+        }
+        .four-lanes .discovery {
+          padding: 9px 36px 9px 12px;
+          max-width: 95%;
+        }
+      }
+      /* Reação surpresa: cinco acertos, ataque automático, feedback para todos. */
+      .special-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 5px;
+        font-size: 10px;
+        color: #91c9c7;
+        font-weight: 850;
+      }
+      .special-bars {
+        display: flex;
+        gap: 3px;
+      }
+      .special-bars span {
+        width: 16px;
+        height: 6px;
+        border-radius: 4px;
+        background: #385565;
+        transition: background 0.12s;
+      }
+      .special-bars span.full {
+        background: #37e2a2;
+        box-shadow: 0 0 7px #37e2a267;
+      }
+      .special-bars span.pending {
+        background: #fbbf24;
+        box-shadow: 0 0 9px #fbbf24aa;
+      }
+      .attack-banner {
+        position: absolute;
+        z-index: 13;
+        left: 50%;
+        top: 43px;
+        transform: translateX(-50%) scale(0.93);
+        max-width: 95%;
+        text-align: center;
+        padding: 10px 16px;
+        background: #421724ed;
+        border: 2px solid #ff617d;
+        color: #fff2f6;
+        border-radius: 13px;
+        font-size: clamp(11px, 2.1vw, 16px);
+        font-weight: 950;
+        letter-spacing: 0.15px;
+        box-shadow: 0 0 27px #ff2d5c75;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.18s,
+          transform 0.18s;
+      }
+      .attack-banner.show {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+      }
+      @media (max-width: 600px) {
+        .special-status {
+          font-size: 9px;
+        }
+        .special-bars span {
+          width: 13px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="background" aria-hidden="true">
+      <div class="atom a1"></div>
+      <div class="atom a2"></div>
+    </div>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-icon">⚗️</div>
+          <div>Poly<strong>Drop</strong></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px">
+          <button
+            id="leaveGame"
+            class="secondary hide"
+            style="padding: 8px 11px; font-size: 12px"
+          >
+            Sair
+          </button>
+          <div id="connection" class="status">
+            <i></i><span>Conectando...</span>
+          </div>
+        </div>
+      </header>
+      <section id="homeScreen" class="screen active container home">
+        <div>
+          <div class="eyebrow">⚗️ Laboratório multiplayer</div>
+          <h1 class="hero-title">Química virou<br /><span>jogo.</span></h1>
+          <p class="hero-desc">Pegue o monômero certo. Vença a turma.</p>
+          <div class="feature-row">
+            <span class="feature">⚡ 5 fases</span
+            ><span class="feature">🎮 Até 4 jogadores</span>
+          </div>
+          <div class="decor" aria-hidden="true">
+            <i class="bond b1"></i><i class="bond b2"></i>
+            <div class="mol one">Eteno</div>
+            <div class="mol two">PVC</div>
+            <div class="mol three">Estireno</div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Vamos jogar?</h2>
+          <p>Escolha o modo e crie uma sala.</p>
+          <label class="small-label" for="name">Seu apelido</label
+          ><input
+            class="input"
+            id="name"
+            maxlength="18"
+            placeholder="Ex.: Marie Curie"
+            autocomplete="nickname"
+          /><label class="small-label">Modo de jogo</label>
+          <div class="mode-grid">
+            <button class="mode selected" data-mode="race">
+              <span class="mode-icon">🏁</span><b>Corrida individual</b
+              ><small>Seu béquer, seus pontos.</small></button
+            ><button class="mode" data-mode="arena">
+              <span class="mode-icon">⚔️</span><b>Laboratório compartilhado</b
+              ><small>Todos disputam as moléculas.</small>
+            </button>
+          </div>
+          <button id="createRoom" class="primary" style="margin-top: 17px">
+            CRIAR SALA →
+          </button>
+          <div class="divider-text">TEM UM CÓDIGO?</div>
+          <div class="join">
+            <input
+              id="joinCode"
+              class="input"
+              maxlength="5"
+              placeholder="CÓDIGO"
+              aria-label="Código de cinco caracteres"
+            /><button id="joinRoom" class="secondary">Entrar</button>
+          </div>
+          <div id="homeError" class="error" role="alert"></div>
+        </div>
+      </section>
+      <section id="lobbyScreen" class="screen container lobby">
+        <div class="lobby-head">
+          <div>
+            <div class="eyebrow">Sala de espera</div>
+            <h1>Todo mundo pronto?</h1>
+            <p id="lobbyMode">Modo: Corrida individual</p>
+          </div>
+          <button id="leaveLobby" class="secondary">← Sair</button>
+        </div>
+        <div class="lobby-layout">
+          <div class="panel">
+            <h3 class="section-title">
+              Jogadores na sala
+              <span id="playerCount" class="badge">0 / 4</span>
+            </h3>
+            <div id="playerList" class="roster"></div>
+            <div id="hostHelp" class="host-help">
+              Chame a turma pelo QR Code.
+            </div>
+            <button id="startMatch" class="primary" style="margin-top: 16px">
+              COMEÇAR PARTIDA →
+            </button>
+          </div>
+          <div class="panel">
+            <h3 class="section-title">
+              Convite <span class="badge">ONLINE</span>
+            </h3>
+            <div class="room-code">
+              <div class="mini">CÓDIGO DA SALA</div>
+              <div id="roomCode" class="code-big">-----</div>
+            </div>
+            <div class="qr-shell">
+              <img
+                id="qr"
+                alt="QR Code para entrar nesta sala"
+                width="158"
+                height="158"
+              />
+            </div>
+            <div class="helper">Escaneie para entrar.</div>
+            <div class="action-row">
+              <button id="copyLink" class="secondary">🔗 Copiar link</button
+              ><button id="shareLink" class="secondary">↗ Compartilhar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section id="gameShell" class="game-shell">
+        <main class="game-main">
+          <div class="game-hud">
+            <div class="game-target">
+              <div id="stageLabel" class="small">FASE 1 / 5</div>
+              <h2 id="targetPolymer">Produza PVC</h2>
+              <div id="targetMonomer" class="mono">
+                Pegue: Cloreto de vinila
+              </div>
+              <div id="specialStatus" class="special-status">
+                <span>⚡ ESPECIAL</span>
+                <div id="specialBars" class="special-bars">
+                  <span></span><span></span><span></span><span></span
+                  ><span></span>
+                </div>
+                <span id="specialText">0/5 acertos</span>
+              </div>
+            </div>
+            <div class="game-timer">
+              <b id="timeLeft">22s</b>
+              <div>RESTANTE</div>
+            </div>
+          </div>
+          <div id="stageProgress" class="progress-row">
+            <span class="progress-cell current"></span
+            ><span class="progress-cell"></span
+            ><span class="progress-cell"></span
+            ><span class="progress-cell"></span
+            ><span class="progress-cell"></span>
+          </div>
+          <div id="board" class="board four-lanes race-view">
+            <canvas
+              id="canvas"
+              aria-label="Campo do jogo, mova o béquer para capturar monômeros"
+            ></canvas>
+            <div class="board-label">
+              Arraste o béquer • sua pista em destaque
+            </div>
+            <div id="countdown" class="float hidden">3</div>
+            <div
+              id="attackBanner"
+              class="attack-banner"
+              role="status"
+              aria-live="polite"
+            ></div>
+            <div id="reconnectNotice" class="reconnect-notice hidden">
+              📡 Reconectando...
+            </div>
+            <div id="feedback" class="feedback">+10</div>
+            <div id="discovery" class="discovery" role="status">
+              <div class="hint">🧪 VOCÊ DESCOBRIU!</div>
+              <h4 id="discoveryTitle">Eteno → Polietileno</h4>
+              <p id="discoveryFact"></p>
+              <p id="discoveryUse"></p>
+              <button id="closeDiscovery" title="Fechar">×</button>
+            </div>
+          </div>
+          <div class="hintbar">
+            <span
+              >🧪 <strong id="modeTag">Corrida individual</strong>
+              <span id="mobileRank">• Rank #1</span></span
+            ><span id="selfScore" class="score-mini">★ 0 pontos</span>
+          </div>
+        </main>
+        <aside class="scoreboard">
+          <h3>🏆 Placar ao vivo</h3>
+          <div class="entries" id="leaderboard"></div>
+          <div class="info">
+            ✅ +10 certo<br />⚡ +5 combo<br />❌ −5 errado
+          </div>
+        </aside>
+      </section>
+      <section id="endScreen" class="screen container results">
+        <div class="eyebrow">Experimento concluído</div>
+        <h1>🏆 Pódio do laboratório</h1>
+        <p class="muted">Veja quem dominou o laboratório.</p>
+        <div id="podium" class="podium"></div>
+        <div class="panel list">
+          <h3 class="section-title">
+            Classificação completa <span class="badge">RESULTADO FINAL</span>
+          </h3>
+          <div id="finalRanking"></div>
+        </div>
+        <div class="end-actions">
+          <button id="playAgain" class="primary">↻ NOVA PARTIDA</button
+          ><button id="leaveEnd" class="secondary">Sair da sala</button>
+        </div>
+        <div id="endHint" class="helper" style="text-align: left"></div>
+      </section>
+      <div class="footer">PolyDrop • Química em jogo</div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      "use strict";
+      const DATA = [
+        {
+          polymer: "PVC",
+          monomer: "Cloreto de vinila",
+          color: "#34d399",
+          formula: "n CH₂=CHCl → [–CH₂–CHCl–]ₙ",
+          fact: "Muitos monômeros se unem e formam uma cadeia de PVC.",
+          use: "Exemplos: canos e fios.",
+        },
+        {
+          polymer: "Polietileno",
+          monomer: "Eteno",
+          color: "#60a5fa",
+          formula: "n CH₂=CH₂ → [–CH₂–CH₂–]ₙ",
+          fact: "Vários etenos ligados formam o polietileno.",
+          use: "Exemplos: sacolas e frascos.",
+        },
+        {
+          polymer: "Poliestireno",
+          monomer: "Estireno",
+          color: "#fbbf24",
+          formula: "n CH₂=CH–C₆H₅ → [–CH₂–CH(C₆H₅)–]ₙ",
+          fact: "Estirenos se unem em longas cadeias de poliestireno.",
+          use: "Exemplos: copos e isopor.",
+        },
+        {
+          polymer: "PTFE (Teflon)",
+          monomer: "Tetrafluoroetileno",
+          color: "#a78bfa",
+          formula: "n CF₂=CF₂ → [–CF₂–CF₂–]ₙ",
+          fact: "A união de tetrafluoroetilenos forma PTFE.",
+          use: "Exemplo: revestimentos de baixo atrito.",
+        },
+        {
+          polymer: "Polipropileno",
+          monomer: "Propeno",
+          color: "#f472b6",
+          formula: "n CH₂=CH–CH₃ → [–CH₂–CH(CH₃)–]ₙ",
+          fact: "Propenos ligados em cadeia formam polipropileno.",
+          use: "Exemplos: potes e tampas.",
+        },
+      ];
+      const $ = (id) => document.getElementById(id);
+      // Polling como fallback: redes de celular e proxies podem interromper WebSockets.
+      const socket = io({
+        reconnection: true,
+        reconnectionDelay: 500,
+        reconnectionDelayMax: 3000,
+      });
+      const canvas = $("canvas"),
+        ctx = canvas.getContext("2d");
+      let mode = "race",
+        room = null,
+        myId = null,
+        world = null,
+        worldReceivedAt = 0,
+        uiState = "home",
+        lastStage = -1,
+        targetX = 0.5,
+        displayX = 0.5,
+        buttons = {},
+        lastMove = 0,
+        lastRender = performance.now(),
+        sparkles = [],
+        captureEffects = [],
+        caughtIds = new Map(),
+        infoTimer = 0,
+        playing = false,
+        countEnd = 0,
+        countTick = null,
+        audioCtx = null,
+        soundsOn = true,
+        lastStartedRound = -1,
+        finishedRound = -1,
+        lastQR = "";
+      const attackAnimations = new Map();
+      let attackBannerTimer = 0;
+      const smoothPositions = new Map();
+      const SESSION = "polydrop-player-v2",
+        ROOM_KEY = "polydrop-room-v2";
+      function uniqueToken() {
+        try {
+          return crypto.randomUUID() + "-" + crypto.randomUUID();
+        } catch {
+          return Array.from({ length: 4 }, () =>
+            Math.random().toString(36).slice(2),
+          ).join("");
+        }
+      }
+      let token = sessionStorage.getItem(SESSION);
+      if (!token) {
+        token = uniqueToken();
+        sessionStorage.setItem(SESSION, token);
+      }
+      const existingCode = new URLSearchParams(location.search).get("sala");
+      if (existingCode)
+        $("joinCode").value = existingCode
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, "")
+          .slice(0, 5);
+      $("name").value = localStorage.getItem("polyName") || "";
+      function setConnection(isOn) {
+        $("connection").classList.toggle("online", isOn);
+        $("connection").classList.toggle("offline", !isOn);
+        $("connection").querySelector("span").textContent = isOn
+          ? "Conectado"
+          : "Reconectando...";
+        $("reconnectNotice").classList.toggle(
+          "hidden",
+          isOn || !room || uiState !== "game",
+        );
+      }
+      function showScreen(name) {
+        uiState = name;
+        $("app").classList.toggle("game-active", name === "game");
+        document.body.classList.toggle("poly-controls", name === "game");
+        $("leaveGame").classList.toggle("hide", name !== "game");
+        for (const id of ["homeScreen", "lobbyScreen", "endScreen"])
+          $(id).classList.toggle("active", id === name + "Screen");
+        $("gameShell").classList.toggle("active", name === "game");
+        document.body.style.overflow = name === "game" ? "hidden" : "auto";
+        if (name === "game") requestAnimationFrame(sizeCanvas);
+        setConnection(socket.connected);
+      }
+      function message(v) {
+        $("homeError").textContent = v;
+      }
+      function getName() {
+        const n = $("name").value.trim().slice(0, 18) || "Cientista";
+        localStorage.setItem("polyName", n);
+        return n;
+      }
+      function doRequest(event, payload) {
+        return new Promise((resolve) => {
+          if (!socket.connected)
+            return resolve({
+              ok: false,
+              error: "Sem conexão. Tente novamente.",
+            });
+          socket
+            .timeout(9000)
+            .emit(event, payload, (err, response) =>
+              resolve(
+                err
+                  ? {
+                      ok: false,
+                      error: "Servidor sem resposta. Tente novamente.",
+                    }
+                  : response,
+              ),
+            );
+        });
+      }
+      const modeName = (v) =>
+        v === "arena"
+          ? "⚔️ Laboratório compartilhado"
+          : "🏁 Corrida individual";
+      function linkToRoom(code) {
+        return (
+          location.origin +
+          location.pathname +
+          "?sala=" +
+          encodeURIComponent(code)
+        );
+      }
+      function storeRoom(code) {
+        sessionStorage.setItem(ROOM_KEY, code);
+      }
+      function clearRoom() {
+        sessionStorage.removeItem(ROOM_KEY);
+      }
+      function joinOrCreateResponse(data) {
+        if (!data?.ok) {
+          message(data?.error || "Não foi possível entrar.");
+          return;
+        }
+        message("");
+        room = data.room;
+        myId = room.youId || myId;
+        storeRoom(room.code);
+        syncRoom(room);
+      }
+      for (const b of document.querySelectorAll(".mode"))
+        b.addEventListener("click", () => {
+          mode = b.dataset.mode;
+          document
+            .querySelectorAll(".mode")
+            .forEach((x) => x.classList.toggle("selected", x === b));
+        });
+      $("createRoom").onclick = async () => {
+        const b = $("createRoom");
+        b.disabled = true;
+        const r = await doRequest("room:create", {
+          mode,
+          name: getName(),
+          token,
+        });
+        b.disabled = false;
+        joinOrCreateResponse(r);
+      };
+      $("joinRoom").onclick = async () => {
+        const code = $("joinCode").value.trim().toUpperCase();
+        if (!/^[A-Z2-9]{5}$/.test(code)) {
+          message("Digite os 5 caracteres da sala.");
+          return;
+        }
+        const b = $("joinRoom");
+        b.disabled = true;
+        const r = await doRequest("room:join", {
+          code,
+          name: getName(),
+          token,
+        });
+        b.disabled = false;
+        joinOrCreateResponse(r);
+      };
+      $("joinCode").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") $("joinRoom").click();
+      });
+      $("name").addEventListener("keydown", (e) => {
+        if (e.key === "Enter")
+          ($("joinCode").value.trim()
+            ? $("joinRoom")
+            : $("createRoom")
+          ).click();
+      });
+      function updateLobby() {
+        if (!room) return;
+        $("lobbyMode").textContent = modeName(room.mode);
+        $("roomCode").textContent = room.code;
+        if (room.code !== lastQR) {
+          lastQR = room.code;
+          $("qr").src = "/api/qr/" + encodeURIComponent(room.code);
+        }
+        $("playerCount").textContent =
+          `${room.players.length} / ${room.maxPlayers}`;
+        $("playerList").replaceChildren();
+        for (const p of room.players) {
+          const el = document.createElement("div");
+          el.className = "person";
+          const avatar = document.createElement("span");
+          avatar.className = "avatar";
+          avatar.style.setProperty("--avatar", p.color);
+          avatar.textContent = p.name.slice(0, 1).toUpperCase();
+          const who = document.createElement("span");
+          who.className = "person-name";
+          who.textContent = p.name + (p.id === myId ? " (você)" : "");
+          const tag = document.createElement("span");
+          tag.className = "person-label";
+          tag.textContent = p.connected
+            ? p.id === room.hostId
+              ? "👑 Líder"
+              : "Jogador"
+            : "Reconectando";
+          el.append(avatar, who, tag);
+          $("playerList").append(el);
+        }
+        if (room.players.length < room.maxPlayers) {
+          const el = document.createElement("div");
+          el.className = "placeholder";
+          el.textContent = "Esperando jogadores...";
+          $("playerList").append(el);
+        }
+        const host = room.hostId === myId;
+        $("startMatch").classList.toggle("hide", !host);
+        $("startMatch").disabled =
+          room.state !== "lobby" && room.state !== "finished";
+        $("hostHelp").textContent = host
+          ? "Tudo pronto? Inicie!"
+          : "Aguarde o líder.";
+      }
+      async function copyLink() {
+        if (!room) return;
+        const url = linkToRoom(room.code);
+        try {
+          await navigator.clipboard.writeText(url);
+          $("copyLink").textContent = "✓ Copiado";
+          setTimeout(
+            () => ($("copyLink").textContent = "🔗 Copiar link"),
+            1400,
+          );
+        } catch {
+          window.prompt("Copie o link:", url);
+        }
+      }
+      $("copyLink").onclick = copyLink;
+      $("shareLink").onclick = async () => {
+        if (!room) return;
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: "PolyDrop",
+              url: linkToRoom(room.code),
+            });
+          } catch {}
+        } else copyLink();
+      };
+      function leave() {
+        attackAnimations.clear();
+        $("attackBanner").classList.remove("show");
+        socket.emit("room:leave");
+        room = null;
+        myId = null;
+        world = null;
+        smoothPositions.clear();
+        playing = false;
+        lastStage = -1;
+        lastQR = "";
+        lastStartedRound = -1;
+        finishedRound = -1;
+        clearRoom();
+        clearInterval(countTick);
+        history.replaceState(null, "", location.pathname);
+        showScreen("home");
+      }
+      $("leaveLobby").onclick = leave;
+      $("leaveEnd").onclick = leave;
+      $("leaveGame").onclick = leave;
+      $("startMatch").onclick = async () => {
+        $("startMatch").disabled = true;
+        const r = await doRequest("room:start", {});
+        if (!r?.ok) {
+          $("startMatch").disabled = false;
+          alert(r?.error || "Não foi possível começar.");
+        }
+      };
+      $("playAgain").onclick = async () => {
+        if (room?.hostId !== myId) return;
+        const r = await doRequest("room:start", {});
+        if (!r?.ok) $("endHint").textContent = r.error;
+      };
+      $("closeDiscovery").onclick = () => {
+        clearTimeout(infoTimer);
+        $("discovery").classList.remove("show");
+      };
+      function showDiscovery(d) {
+        $("discoveryTitle").textContent = d.monomer + " → " + d.polymer;
+        $("discoveryFact").textContent = "🔗 " + d.fact;
+        $("discoveryUse").textContent = "💡 " + d.use;
+        clearTimeout(infoTimer);
+        $("discovery").classList.add("show");
+        infoTimer = setTimeout(
+          () => $("discovery").classList.remove("show"),
+          3100,
+        );
+      }
+      function sound(good) {
+        if (!soundsOn) return;
+        try {
+          audioCtx =
+            audioCtx ||
+            new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === "suspended") audioCtx.resume();
+          const o = audioCtx.createOscillator(),
+            gain = audioCtx.createGain(),
+            t = audioCtx.currentTime;
+          o.type = good ? "sine" : "sawtooth";
+          o.frequency.setValueAtTime(good ? 660 : 225, t);
+          o.frequency.exponentialRampToValueAtTime(good ? 990 : 135, t + 0.18);
+          gain.gain.setValueAtTime(0.07, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+          o.connect(gain);
+          gain.connect(audioCtx.destination);
+          o.start(t);
+          o.stop(t + 0.24);
+        } catch {}
+      }
+      function hitEffect(d) {
+        if (room?.roundId && d.roundId && room.roundId !== d.roundId) return;
+        const own = !d.playerId || d.playerId === myId;
+        if (own) {
+          const points = Number.isFinite(d.points)
+            ? d.points
+            : d.ok
+              ? d.bonus
+                ? 15
+                : 10
+              : -5;
+          const el = $("feedback");
+          el.textContent = points > 0 ? "+" + points + "!" : points + "!";
+          el.style.color = d.ok ? "#7cf7d8" : "#fb7185";
+          el.classList.remove("show");
+          void el.offsetWidth;
+          el.classList.add("show");
+          sound(d.ok);
+        }
+        // Todas as telas mostram o acerto na pista exata; só a pessoa escuta o som.
+        if (Number.isInteger(d.id))
+          caughtIds.set(d.id, performance.now() + 1100);
+        const fx = {
+          playerId: d.playerId || myId,
+          x: d.x,
+          y: Number.isFinite(d.y) ? d.y : 0.81,
+          age: 0,
+          ok: !!d.ok,
+          label:
+            (Number.isFinite(d.points)
+              ? d.points
+              : d.ok
+                ? d.bonus
+                  ? 15
+                  : 10
+                : -5) > 0
+              ? "+" + (Number.isFinite(d.points) ? d.points : d.bonus ? 15 : 10)
+              : String(Number.isFinite(d.points) ? d.points : -5),
+          color: d.color || "#5eead4",
+        };
+        captureEffects.push(fx);
+        sparkles.push({ ...fx, color: d.ok ? "#5ef2b3" : "#fb7185" });
+        if (own && world) {
+          const p = world.players.find((x) => x.id === myId);
+          if (p) {
+            p.chain = d.chain || 0;
+            p.pendingSpecial = !!d.pendingSpecial;
+            updateSpecialStatus(p);
+          }
+        }
+      }
+      function updateStage(idx) {
+        if (idx < 0 || idx >= DATA.length) return;
+        lastStage = idx;
+        const d = DATA[idx];
+        $("stageLabel").textContent =
+          `FASE ${idx + 1} / 5` +
+          (idx === 3 ? " · RÁPIDO" : idx === 4 ? " · TURBO" : "");
+        $("targetPolymer").textContent = d.polymer;
+        $("targetPolymer").style.color = d.color;
+        $("targetMonomer").textContent = "Pegue: " + d.monomer;
+        document
+          .querySelectorAll(".progress-cell")
+          .forEach(
+            (c, i) =>
+              (c.className =
+                "progress-cell" +
+                (i < idx ? " complete" : i === idx ? " current" : "")),
+          );
+      }
+      function updateSpecialStatus(p) {
+        const inRace = (world?.mode || room?.mode) === "race";
+        $("specialStatus").style.display = inRace ? "flex" : "none";
+        if (!inRace) return;
+        const charge = Math.max(0, Math.min(5, p?.chain || 0));
+        const pending = !!p?.pendingSpecial;
+        for (const [i, bar] of [...$("specialBars").children].entries()) {
+          bar.className = pending ? "pending" : i < charge ? "full" : "";
+        }
+        $("specialText").textContent = pending
+          ? "⚡ Pronto, aguardando alvo"
+          : charge + "/5 acertos seguidos";
+      }
+      function showAttack(d) {
+        if ((room?.mode || world?.mode) !== "race") return;
+        if (room?.roundId && d.roundId && room.roundId !== d.roundId) return;
+        const messages = {
+          contamination: "☣️ CONTAMINAÇÃO",
+          acceleration: "⚡ ACELERAÇÃO",
+          inhibitor: "🧬 INIBIDOR",
+        };
+        const msg =
+          (d.sourceName || "Alguém") +
+          " atacou " +
+          (d.targetName || "um jogador") +
+          "!";
+        $("attackBanner").textContent =
+          msg + " · " + (messages[d.type] || "REAÇÃO SURPRESA");
+        $("attackBanner").classList.add("show");
+        clearTimeout(attackBannerTimer);
+        attackBannerTimer = setTimeout(
+          () => $("attackBanner").classList.remove("show"),
+          2700,
+        );
+        attackAnimations.set(d.targetId, {
+          at: performance.now(),
+          type: d.type,
+          until: d.until,
+        });
+      }
+      function updateBoardInfo() {
+        if (!world) return;
+        const p = world.players.find((x) => x.id === myId),
+          rank = world.players.findIndex((x) => x.id === myId) + 1;
+        $("selfScore").textContent = `★ ${p?.score || 0} pts`;
+        $("mobileRank").textContent = rank ? "• #" + rank : "";
+        updateSpecialStatus(p);
+        $("timeLeft").textContent = Math.ceil(world.remaining / 1000) + "s";
+        $("timeLeft").style.color =
+          world.remaining < 6000 ? "#fb7185" : "#f4fbff";
+        $("modeTag").textContent = world.mode === "arena" ? "Arena" : "Corrida";
+        $("leaderboard").replaceChildren();
+        for (let i = 0; i < world.players.length; i++) {
+          const x = world.players[i],
+            el = document.createElement("div");
+          el.className = "rank" + (x.id === myId ? " me" : "");
+          const num = document.createElement("span");
+          num.className = "num";
+          num.textContent = i + 1 + "°";
+          const name = document.createElement("span");
+          name.className = "name";
+          name.textContent = x.name;
+          name.style.color = x.color;
+          const pts = document.createElement("span");
+          pts.className = "points";
+          pts.textContent = x.score;
+          el.append(num, name, pts);
+          $("leaderboard").append(el);
+        }
+      }
+      function startCountdown(snapshot) {
+        if (lastStartedRound === snapshot.roundId) return;
+        lastStartedRound = snapshot.roundId;
+        finishedRound = -1;
+        showScreen("game");
+        playing = false;
+        world = null;
+        smoothPositions.clear();
+        targetX = 0.5;
+        displayX = 0.5;
+        lastStage = -1;
+        sparkles.length = 0;
+        captureEffects.length = 0;
+        caughtIds.clear();
+        attackAnimations.clear();
+        $("attackBanner").classList.remove("show");
+        updateStage(0);
+        clearInterval(countTick);
+        countEnd = snapshot.countdownUntil || Date.now() + 3500;
+        $("countdown").classList.remove("hidden");
+        const update = () => {
+          const n = Math.max(0, Math.ceil((countEnd - Date.now()) / 1000));
+          $("countdown").textContent = n ? String(n) : "VAI!";
+          if (!n) {
+            clearInterval(countTick);
+            setTimeout(() => $("countdown").classList.add("hidden"), 500);
+          }
+        };
+        update();
+        countTick = setInterval(update, 100);
+      }
+      function finishGame(data) {
+        playing = false;
+        clearInterval(countTick);
+        $("countdown").classList.add("hidden");
+        $("discovery").classList.remove("show");
+        showScreen("end");
+        $("podium").replaceChildren();
+        const winners = data.players.slice(0, 3),
+          arranged = [winners[1], winners[0], winners[2]],
+          medals = ["🥈", "🥇", "🥉"];
+        for (let i = 0; i < 3; i++) {
+          const p = arranged[i],
+            el = document.createElement("div");
+          el.className = "podium-person" + (i === 1 ? " first" : "");
+          const m = document.createElement("span");
+          m.className = "medal";
+          m.textContent = medals[i];
+          const n = document.createElement("strong");
+          n.textContent = p ? p.name : "—";
+          const pts = document.createElement("span");
+          pts.className = "pts";
+          pts.textContent = p ? p.score + " pts" : "—";
+          el.append(m, n, pts);
+          $("podium").append(el);
+        }
+        $("finalRanking").replaceChildren();
+        data.players.forEach((p, i) => {
+          const el = document.createElement("div");
+          el.className = "result-row";
+          const n = document.createElement("span");
+          n.textContent = `${i + 1}º ${p.name}${p.id === myId ? " (você)" : ""} · ${p.hits} acertos`;
+          const pts = document.createElement("b");
+          pts.textContent = p.score + " pts";
+          el.append(n, pts);
+          $("finalRanking").append(el);
+        });
+        const host = room?.hostId === myId;
+        $("playAgain").classList.toggle("hide", !host);
+        $("endHint").textContent = host ? "Revanche?" : "Aguarde o líder.";
+      }
+      function syncRoom(snapshot) {
+        if (!snapshot) return;
+        if (room && room.code !== snapshot.code) return;
+        room = { ...snapshot };
+        updateBoardMode(room.mode);
+        if (snapshot.youId) myId = snapshot.youId;
+        storeRoom(room.code);
+        history.replaceState(null, "", linkToRoom(room.code));
+        updateLobby();
+        if (room.state === "countdown") {
+          startCountdown(room);
+          if (uiState !== "game") showScreen("game");
+        } else if (room.state === "playing") {
+          if (uiState !== "game") showScreen("game");
+          requestAnimationFrame(sendCupGeometry);
+          clearInterval(countTick);
+          $("countdown").classList.add("hidden");
+          playing = true;
+          if (lastStage !== room.stage) updateStage(room.stage);
+        } else if (room.state === "finished") {
+          if (uiState !== "end" || finishedRound !== room.roundId) {
+            finishedRound = room.roundId;
+            finishGame({ players: room.players, mode: room.mode });
+          }
+        } else {
+          playing = false;
+          if (uiState !== "lobby") showScreen("lobby");
+        }
+      }
+      let recovering = false;
+      async function recoverRoom() {
+        if (recovering) return;
+        const saved = room?.code || sessionStorage.getItem(ROOM_KEY);
+        // Só auto-reentrar numa sala conhecida nesta aba.
+        if (!saved) return;
+        recovering = true;
+        const r = await doRequest("room:join", {
+          code: saved,
+          name: getName(),
+          token,
+        });
+        recovering = false;
+        if (r?.ok) {
+          room = r.room;
+          myId = room.youId || myId;
+          syncRoom(room);
+        } else {
+          // Se o Render reiniciou e perdeu as salas, não esconder o motivo.
+          room = null;
+          myId = null;
+          playing = false;
+          clearRoom();
+          showScreen("home");
+          message("A sala expirou no servidor. Crie outra.");
+        }
+      }
+      socket.on("connect", () => {
+        setConnection(true);
+        recoverRoom();
+        requestAnimationFrame(sendCupGeometry);
+      });
+      socket.on("disconnect", () => {
+        playing = false;
+        setConnection(false);
+      });
+      socket.on("connect_error", () => setConnection(false));
+      socket.on("room:joined", (data) => {
+        room = data;
+        myId = data.youId || myId;
+        syncRoom(data);
+      });
+      socket.on("room:info", (data) => {
+        if (!room || room.code !== data.code) return;
+        syncRoom(data);
+      });
+      socket.on("room:replaced", () => {
+        room = null;
+        myId = null;
+        playing = false;
+        clearRoom();
+        showScreen("home");
+        message("Esta sessão foi aberta em outra aba.");
+      });
+      socket.on("game:stage", (d) => {
+        if (!room) return;
+        playing = true;
+        clearInterval(countTick);
+        $("countdown").classList.add("hidden");
+        if (uiState !== "game") showScreen("game");
+        updateStage(d.stage);
+      });
+      socket.on("game:world", (d) => {
+        if (!room) return;
+        world = d;
+        worldReceivedAt = performance.now();
+        playing = true;
+        updateBoardMode(d.mode);
+        if (uiState !== "game") showScreen("game");
+        if (d.stage !== lastStage) updateStage(d.stage);
+        updateBoardInfo();
+      });
+      socket.on("game:hit", hitEffect);
+      socket.on("game:power", showAttack);
+      socket.on("game:discovery", showDiscovery);
+      socket.on("game:finished", (d) => {
+        if (!room) return;
+        finishedRound = d.roundId;
+        finishGame(d);
+      });
+
+      let boardW = 700,
+        boardH = 600,
+        pixelRatio = 1;
+      const GAP = 7,
+        BOARD_PAD = 7;
+      function updateBoardMode(newMode) {
+        const arena = newMode === "arena";
+        $("board").classList.toggle("arena-view", arena);
+        $("board").classList.toggle("race-view", !arena);
+        $("board").querySelector(".board-label").textContent = arena
+          ? "Uma arena • todos disputam juntos"
+          : "Sua pista grande • rivais ao vivo";
+      }
+      function sizeCanvas() {
+        const rect = $("board").getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+        boardW = rect.width;
+        boardH = rect.height;
+        pixelRatio = Math.min(devicePixelRatio || 1, 1.75);
+        canvas.width = Math.round(boardW * pixelRatio);
+        canvas.height = Math.round(boardH * pixelRatio);
+        ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        sendCupGeometry();
+      }
+      addEventListener("resize", () => {
+        if (uiState === "game") sizeCanvas();
+      });
+      // Envia ao servidor o tamanho real da região CENTRAL da boca do copo.
+      // A tolerância acompanha PC/celular (não é um percentual fixo da pista).
+      function sendCupGeometry() {
+        if (!room || !socket.connected) return;
+        const r = laneRect(0);
+        if (r.w <= 0 || r.h <= 0) return;
+        const cupWidth = Math.max(33, Math.min(65, r.w * 0.14));
+        const centerTolerance = (cupWidth * 0.19) / r.w;
+        socket.emit(
+          "game:layout",
+          Math.max(0.012, Math.min(0.032, centerTolerance)),
+        );
+      }
+      function requestMove(x) {
+        targetX = Math.max(0.045, Math.min(0.955, x));
+        const t = performance.now();
+        if (t - lastMove > 30 && socket.connected && playing) {
+          lastMove = t;
+          socket.emit("game:move", targetX);
+        }
+      }
+      function arenaMode() {
+        return (world?.mode || room?.mode) === "arena";
+      }
+      function laneRect(slot) {
+        const innerW = boardW - 2 * BOARD_PAD,
+          innerH = boardH - 2 * BOARD_PAD;
+        // Arena compartilhada: um campo apenas, não quatro cópias da mesma arena.
+        if (arenaMode())
+          return {
+            x: BOARD_PAD,
+            y: BOARD_PAD,
+            w: innerW,
+            h: innerH,
+            mini: false,
+          };
+        // Em celulares, a pista principal ocupa ~72% da altura. Miniaturas abaixo.
+        if (boardW < 690) {
+          const mainH = Math.max(170, (innerH - GAP) * 0.72),
+            miniH = innerH - GAP - mainH;
+          if (slot === 0)
+            return {
+              x: BOARD_PAD,
+              y: BOARD_PAD,
+              w: innerW,
+              h: mainH,
+              mini: false,
+            };
+          const miniW = (innerW - 2 * GAP) / 3;
+          return {
+            x: BOARD_PAD + (slot - 1) * (miniW + GAP),
+            y: BOARD_PAD + mainH + GAP,
+            w: miniW,
+            h: miniH,
+            mini: true,
+          };
+        }
+        // Desktop e tablets na horizontal: pista grande à esquerda, miniaturas na lateral.
+        const mainW = (innerW - GAP) * 0.715,
+          miniW = innerW - GAP - mainW;
+        if (slot === 0)
+          return {
+            x: BOARD_PAD,
+            y: BOARD_PAD,
+            w: mainW,
+            h: innerH,
+            mini: false,
+          };
+        const miniH = (innerH - 2 * GAP) / 3;
+        return {
+          x: BOARD_PAD + mainW + GAP,
+          y: BOARD_PAD + (slot - 1) * (miniH + GAP),
+          w: miniW,
+          h: miniH,
+          mini: true,
+        };
+      }
+      function lanePeople() {
+        const all = world?.players || room?.players || [];
+        const mine = all.find((p) => p.id === myId);
+        const others = all
+          .filter((p) => p.id !== myId)
+          .sort((a, b) => a.id.localeCompare(b.id));
+        return [
+          mine || {
+            id: myId || "self",
+            name: "Você",
+            x: displayX,
+            score: 0,
+            color: "#5eead4",
+            connected: true,
+          },
+          ...others,
+        ].slice(0, 4);
+      }
+      function localTouch(event) {
+        const rect = $("board").getBoundingClientRect(),
+          r = laneRect(0);
+        const px = event.clientX - rect.left,
+          py = event.clientY - rect.top;
+        if (px < r.x || px > r.x + r.w || py < r.y || py > r.y + r.h)
+          return null;
+        return (px - r.x) / r.w;
+      }
+      // O dedo só precisa COMEÇAR na sua pista. Depois pode ir para baixo,
+      // para cima ou para os lados, até fora do retângulo, sem perder o controle.
+      let activePointerId = null;
+      const board = $("board");
+      board.addEventListener("pointerdown", (e) => {
+        if (activePointerId !== null || e.target.closest("#discovery")) return;
+        const x = localTouch(e);
+        if (x === null) return; // não começar arrastando sobre a pista do adversário
+        activePointerId = e.pointerId;
+        try {
+          board.setPointerCapture(e.pointerId);
+        } catch {}
+        requestMove(x);
+        if (e.cancelable) e.preventDefault();
+      });
+      // Captura no WINDOW para manter o controle até quando o dedo sai da pista.
+      function moveFromAnywhere(e) {
+        if (activePointerId === null || e.pointerId !== activePointerId) return;
+        const rect = board.getBoundingClientRect(),
+          r = laneRect(0);
+        // Sem verificação de Y: controle funciona até abaixo da tabela do jogo.
+        requestMove((e.clientX - rect.left - r.x) / r.w);
+        if (e.cancelable && e.pointerType === "touch") e.preventDefault();
+      }
+      window.addEventListener("pointermove", moveFromAnywhere, {
+        capture: true,
+        passive: false,
+      });
+      function releasePointer(e) {
+        if (e.pointerId !== activePointerId) return;
+        activePointerId = null;
+        try {
+          if (board.hasPointerCapture(e.pointerId))
+            board.releasePointerCapture(e.pointerId);
+        } catch {}
+      }
+      window.addEventListener("pointerup", releasePointer, true);
+      window.addEventListener("pointercancel", releasePointer, true);
+      window.addEventListener("blur", () => {
+        activePointerId = null;
+      });
+      addEventListener("keydown", (e) => {
+        if (
+          ["ArrowLeft", "ArrowRight", "KeyA", "KeyD"].includes(e.code) &&
+          uiState === "game"
+        ) {
+          buttons[e.code] = true;
+          e.preventDefault();
+        }
+      });
+      addEventListener("keyup", (e) => {
+        buttons[e.code] = false;
+      });
+      function rr(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, r);
+      }
+      function drawLaneBackdrop(r, slot) {
+        ctx.save();
+        rr(r.x, r.y, r.w, r.h, r.mini ? 9 : 13);
+        ctx.clip();
+        const grad = ctx.createLinearGradient(r.x, r.y, r.x + r.w, r.y + r.h);
+        grad.addColorStop(0, slot === 0 ? "#113b46" : "#142f42");
+        grad.addColorStop(1, "#071b2b");
+        ctx.fillStyle = grad;
+        ctx.fillRect(r.x, r.y, r.w, r.h);
+        ctx.strokeStyle = "#87d9ca0b";
+        ctx.lineWidth = 1;
+        const grid = r.mini ? 25 : 36;
+        for (let x = grid; x < r.w; x += grid) {
+          ctx.beginPath();
+          ctx.moveTo(r.x + x, r.y);
+          ctx.lineTo(r.x + x, r.y + r.h);
+          ctx.stroke();
+        }
+        for (let y = grid; y < r.h; y += grid) {
+          ctx.beginPath();
+          ctx.moveTo(r.x, r.y + y);
+          ctx.lineTo(r.x + r.w, r.y + y);
+          ctx.stroke();
+        }
+        const ground = r.mini ? 10 : 17;
+        ctx.fillStyle = "#23465588";
+        ctx.fillRect(r.x, r.y + r.h - ground, r.w, ground);
+        ctx.restore();
+        ctx.save();
+        rr(r.x + 1, r.y + 1, r.w - 2, r.h - 2, r.mini ? 9 : 13);
+        ctx.strokeStyle = slot === 0 ? "#5eead4" : "#3f687b";
+        ctx.lineWidth = slot === 0 ? 2.8 : 1.3;
+        ctx.stroke();
+        ctx.restore();
+      }
+      function drawLaneBanner(r, person, slot) {
+        const mini = !!r.mini,
+          pad = mini ? 4 : 8,
+          bh = mini ? 21 : 29;
+        ctx.save();
+        ctx.fillStyle = "#061927eb";
+        rr(r.x + pad, r.y + pad, r.w - 2 * pad, bh, mini ? 5 : 8);
+        ctx.fill();
+        const name = person ? (slot === 0 ? "VOCÊ" : person.name) : "LIVRE";
+        const points = person ? `${person.score || 0}` : "";
+        ctx.fillStyle = slot === 0 ? "#8bfce5" : person?.color || "#8aa5b4";
+        ctx.font = `850 ${mini ? 9 : 13}px system-ui`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        const available = Math.max(19, r.w - (mini ? 36 : 78));
+        let display = name;
+        while (ctx.measureText(display).width > available && display.length > 2)
+          display = display.slice(0, -2) + "…";
+        ctx.fillText(display, r.x + pad + 7, r.y + pad + bh / 2);
+        if (person) {
+          ctx.fillStyle = "#ffe29d";
+          ctx.font = `850 ${mini ? 9 : 12}px system-ui`;
+          ctx.textAlign = "right";
+          ctx.fillText(
+            points + (mini ? "" : " pts"),
+            r.x + r.w - pad - 7,
+            r.y + pad + bh / 2,
+          );
+        }
+        ctx.restore();
+      }
+      // Bolinhas circulares: o nome completo do monômero fica no objetivo acima.
+      // Nomes curtos evitam transformar a molécula em uma cápsula comprida.
+      const ROUND_DROP_LABELS = [
+        ["Cloreto", "vinila"],
+        ["Eteno"],
+        ["Estireno"],
+        ["TFE"],
+        ["Propeno"],
+      ];
+      const MINI_DROP_LABELS = ["CV", "Et", "Es", "TFE", "Pr"];
+      function drawDropInLane(r, d, latency) {
+        const yFraction = d.y + (d.vy || 0) * latency;
+        if (yFraction < -0.15 || yFraction > 1.18 || caughtIds.has(d.id))
+          return;
+        const info = DATA[d.idx] || DATA[0],
+          mini = !!r.mini;
+        // Diâmetro SEMPRE igual na horizontal e vertical, em PC e celular.
+        const radius = mini
+          ? Math.max(9, Math.min(16, Math.min(r.w, r.h) * 0.075))
+          : Math.max(21, Math.min(31, r.w * 0.084, r.h * 0.056));
+        const cy = r.y + Math.max(0, yFraction) * r.h;
+        const cx =
+          r.x + Math.max(radius + 3, Math.min(r.w - radius - 3, d.x * r.w));
+        ctx.save();
+        rr(r.x + 2, r.y + 2, r.w - 4, r.h - 4, mini ? 7 : 11);
+        ctx.clip();
+        ctx.shadowColor = info.color;
+        ctx.shadowBlur = mini ? 5 : 12;
+        const glow = ctx.createRadialGradient(
+          cx - radius * 0.3,
+          cy - radius * 0.35,
+          1,
+          cx,
+          cy,
+          radius,
+        );
+        glow.addColorStop(0, "#315465");
+        glow.addColorStop(0.65, "#17384a");
+        glow.addColorStop(1, "#0b2234");
+        ctx.fillStyle = glow;
+        ctx.strokeStyle = info.color;
+        ctx.lineWidth = mini ? 1.6 : 2.6;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        // Brilho pequeno, sem efeito oval.
+        ctx.fillStyle = "#ffffff29";
+        ctx.beginPath();
+        ctx.arc(
+          cx - radius * 0.34,
+          cy - radius * 0.37,
+          mini ? 1.6 : 3,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+        ctx.fillStyle = "#f5ffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const lines = mini
+          ? [MINI_DROP_LABELS[d.idx] || "?"]
+          : ROUND_DROP_LABELS[d.idx] || ["?"];
+        let font = mini
+          ? Math.max(7, Math.min(8.8, radius * 0.72))
+          : Math.max(8, Math.min(11, radius * 0.4));
+        const maxTextWidth = radius * 1.77;
+        const setFont = () => (ctx.font = `900 ${font}px system-ui`);
+        setFont();
+        while (
+          lines.some((line) => ctx.measureText(line).width > maxTextWidth) &&
+          font > 6.5
+        ) {
+          font -= 0.25;
+          setFont();
+        }
+        const lineHeight = font * 1.03;
+        lines.forEach((line, i) =>
+          ctx.fillText(
+            line,
+            cx,
+            cy + (i - (lines.length - 1) / 2) * lineHeight,
+          ),
+        );
+        ctx.restore();
+      }
+      function smoothX(person, dt) {
+        if (person.id === myId) return displayX;
+        const current = smoothPositions.get(person.id);
+        const next =
+          current === undefined
+            ? person.x
+            : current + (person.x - current) * Math.min(1, dt * 18);
+        smoothPositions.set(person.id, next);
+        return next;
+      }
+      function drawCupInLane(r, p, dt, focus, label = false) {
+        // O topo do copo está exatamente na linha de captura do servidor (y=0.81).
+        const x = r.x + smoothX(p, dt) * r.w,
+          y = r.y + r.h * 0.81;
+        const w = r.mini
+          ? Math.max(18, Math.min(35, r.w * 0.24))
+          : Math.max(33, Math.min(65, r.w * 0.14));
+        const h = r.mini
+          ? Math.max(17, Math.min(32, r.h * 0.14))
+          : Math.max(28, Math.min(53, r.h * 0.115));
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.lineWidth = focus ? 2.6 : 1.8;
+        ctx.strokeStyle = focus ? "#d7fff5" : p.color;
+        ctx.fillStyle = "#c9f7ff15";
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = focus ? 10 : 4;
+        ctx.beginPath();
+        ctx.moveTo(-w / 2, 0);
+        ctx.lineTo(-w * 0.43, h * 0.85);
+        ctx.quadraticCurveTo(-w * 0.41, h, -w * 0.28, h);
+        ctx.lineTo(w * 0.28, h);
+        ctx.quadraticCurveTo(w * 0.41, h, w * 0.43, h * 0.85);
+        ctx.lineTo(w / 2, 0);
+        ctx.stroke();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // Marca visual discreta no CENTRO da boca: só ali a molécula pontua.
+        ctx.strokeStyle = focus ? "#baffc8" : p.color;
+        ctx.lineWidth = focus ? 3 : 1.8;
+        ctx.beginPath();
+        ctx.moveTo(-w * 0.19, -1);
+        ctx.lineTo(w * 0.19, -1);
+        ctx.stroke();
+        ctx.fillStyle = p.color + "b8";
+        ctx.beginPath();
+        ctx.moveTo(-w * 0.39, h * 0.52);
+        ctx.lineTo(w * 0.39, h * 0.52);
+        ctx.lineTo(w * 0.3, h * 0.89);
+        ctx.lineTo(-w * 0.3, h * 0.89);
+        ctx.closePath();
+        ctx.fill();
+        if (label) {
+          const text = p.id === myId ? "VOCÊ" : p.name.slice(0, 9),
+            font = 11;
+          ctx.font = `850 ${font}px system-ui`;
+          const tw = ctx.measureText(text).width + 14;
+          ctx.fillStyle = "#071826dc";
+          rr(-tw / 2, -26, tw, 18, 7);
+          ctx.fill();
+          ctx.fillStyle = p.color;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(text, 0, -17);
+        }
+        ctx.restore();
+      }
+      // Feedback de captura: a bolinha fica verde (acerto) ou vermelha (erro),
+      // brilha e desaparece num fade. O número de pontos sobe suavemente.
+      function laneForPlayer(playerId) {
+        if (arenaMode()) return laneRect(0);
+        const slot = lanePeople().findIndex((p) => p?.id === playerId);
+        return slot >= 0 ? laneRect(slot) : null;
+      }
+      function drawCaptureEffects(dt) {
+        for (let i = captureEffects.length - 1; i >= 0; i--) {
+          const fx = captureEffects[i];
+          fx.age += dt;
+          const t = fx.age / 0.7;
+          if (t >= 1) {
+            captureEffects.splice(i, 1);
+            continue;
+          }
+          const r = laneForPlayer(fx.playerId);
+          if (!r) continue;
+          ctx.save();
+          rr(r.x + 2, r.y + 2, r.w - 4, r.h - 4, 8);
+          ctx.clip();
+          const a = 1 - t,
+            x = r.x + fx.x * r.w,
+            y = r.y + fx.y * r.h;
+          const radius = r.mini
+            ? Math.max(9, Math.min(16, r.w * 0.075))
+            : Math.max(21, Math.min(31, r.w * 0.084, r.h * 0.056));
+          const color = fx.ok ? "#65f5b6" : "#ff637d";
+          ctx.globalAlpha = a;
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 18 * a;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(x, y, radius * (0.7 + 0.5 * t), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 2 * a;
+          ctx.beginPath();
+          ctx.arc(x, y, radius * (1 + 0.7 * t), 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.font = `900 ${r.mini ? 10 : Math.max(13, Math.min(18, r.w * 0.042))}px system-ui`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = "#fff";
+          ctx.fillText(fx.label, x, y - radius - 9 - 27 * t);
+          ctx.restore();
+        }
+        const now = performance.now();
+        for (const [id, expires] of caughtIds)
+          if (now > expires) caughtIds.delete(id);
+      }
+      function drawOwnSparkles(dt) {
+        for (let i = sparkles.length - 1; i >= 0; i--) {
+          const s = sparkles[i];
+          s.age += dt;
+          if (s.age > 0.55) {
+            sparkles.splice(i, 1);
+            continue;
+          }
+          const r = laneForPlayer(s.playerId);
+          if (!r) continue;
+          ctx.save();
+          rr(r.x, r.y, r.w, r.h, 8);
+          ctx.clip();
+          const x = r.x + s.x * r.w,
+            y = r.y + s.y * r.h;
+          for (let k = 0; k < 8; k++) {
+            const angle = (k * Math.PI) / 4,
+              dist = s.age * Math.min(70, r.w * 0.22);
+            ctx.globalAlpha = 1 - s.age / 0.55;
+            ctx.fillStyle = s.color;
+            ctx.beginPath();
+            ctx.arc(
+              x + Math.cos(angle) * dist,
+              y + Math.sin(angle) * dist,
+              r.mini ? 1.3 : 2.3,
+              0,
+              7,
+            );
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+      // Borda vermelha, pulso e pequena tremida: o alvo é identificado em TODAS as telas.
+      function attackShake(p, now) {
+        if (!p || !attackAnimations.has(p.id)) return 0;
+        const age = now - attackAnimations.get(p.id).at;
+        if (age > 700) return 0;
+        return Math.sin(age * 0.1) * 3.3 * (1 - age / 700);
+      }
+      function drawAttackGlow(r, p, now) {
+        if (!p || !p.effect || p.effect.until <= Date.now()) return;
+        const initial = attackAnimations.get(p.id);
+        const early = initial && now - initial.at < 1050;
+        const pulse = 0.42 + 0.24 * Math.sin(now * 0.023);
+        ctx.save();
+        ctx.globalAlpha = early ? Math.max(0.55, pulse) : pulse * 0.7;
+        ctx.strokeStyle = "#ff4d68";
+        ctx.lineWidth = early ? 5 : 3;
+        ctx.shadowColor = "#ff244e";
+        ctx.shadowBlur = early ? 24 : 13;
+        rr(r.x + 2, r.y + 2, r.w - 4, r.h - 4, r.mini ? 9 : 13);
+        ctx.stroke();
+        ctx.restore();
+        ctx.save();
+        ctx.fillStyle = "#fb536b";
+        ctx.font = `900 ${r.mini ? 9 : 12}px system-ui`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const remaining = Math.ceil((p.effect.until - Date.now()) / 1000);
+        const icons = {
+          contamination: "☣",
+          acceleration: "⚡",
+          inhibitor: "⛔",
+        };
+        const label = `${icons[p.effect.type] || "⚠"} ${Math.max(0, remaining)}s`;
+        ctx.fillText(label, r.x + r.w / 2, r.y + (r.mini ? 43 : 49));
+        ctx.restore();
+      }
+      function renderBoard(now, dt) {
+        ctx.clearRect(0, 0, boardW, boardH);
+        ctx.fillStyle = "#091d2a";
+        ctx.fillRect(0, 0, boardW, boardH);
+        const people = lanePeople();
+        const lag = Math.max(0, Math.min(0.16, (now - worldReceivedAt) / 1000));
+        if (arenaMode()) {
+          const r = laneRect(0);
+          drawLaneBackdrop(r, 0);
+          for (const d of world?.drops || []) drawDropInLane(r, d, lag);
+          // Cada pessoa disputa as MESMAS moléculas; não repetimos o campo quatro vezes.
+          for (const p of people)
+            if (p) drawCupInLane(r, p, dt, p.id === myId, true);
+          ctx.save();
+          ctx.fillStyle = "#061927ce";
+          rr(r.x + 9, r.y + 8, Math.min(r.w - 18, 238), 27, 8);
+          ctx.fill();
+          ctx.fillStyle = "#85f5e5";
+          ctx.font = "850 11px system-ui";
+          ctx.textBaseline = "middle";
+          ctx.textAlign = "left";
+          ctx.fillText("⚔  ARENA COMPARTILHADA", r.x + 19, r.y + 22);
+          ctx.restore();
+        } else {
+          for (let i = 0; i < 4; i++) {
+            const r = laneRect(i),
+              p = people[i];
+            ctx.save();
+            ctx.translate(attackShake(p, now), 0);
+            drawLaneBackdrop(r, i);
+            if (p) {
+              const drops = world?.lanes?.[p.id] || [];
+              for (const d of drops) drawDropInLane(r, d, lag);
+              drawCupInLane(r, p, dt, i === 0);
+              if (!p.connected) {
+                ctx.save();
+                ctx.fillStyle = "#051624a5";
+                ctx.fillRect(r.x + 2, r.y + 30, r.w - 4, r.h - 34);
+                ctx.fillStyle = "#ffdda0";
+                ctx.font = `800 ${r.mini ? 9 : 12}px system-ui`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("RECONEXÃO", r.x + r.w / 2, r.y + r.h / 2);
+                ctx.restore();
+              }
+            } else {
+              ctx.save();
+              ctx.fillStyle = "#69909b";
+              ctx.font = `800 ${r.mini ? 10 : 13}px system-ui`;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("Pista livre", r.x + r.w / 2, r.y + r.h / 2);
+              ctx.restore();
+            }
+            drawLaneBanner(r, p, i);
+            ctx.restore();
+            drawAttackGlow(r, p, now);
+          }
+        }
+        drawOwnSparkles(dt);
+        drawCaptureEffects(dt);
+      }
+      function draw(t) {
+        const dt = Math.min(0.05, Math.max(0, (t - lastRender) / 1000));
+        lastRender = t;
+        if (uiState !== "game" || !boardW || !boardH) return;
+        if (playing) {
+          let delta = 0;
+          if (buttons.ArrowLeft || buttons.KeyA) delta -= dt * 0.85;
+          if (buttons.ArrowRight || buttons.KeyD) delta += dt * 0.85;
+          if (delta) requestMove(targetX + delta);
+        }
+        displayX += (targetX - displayX) * Math.min(1, dt * 26);
+        renderBoard(t, dt);
+      }
+      // O monitor decide a taxa efetiva; requestAnimationFrame permite ~60fps em telas de 60Hz.
+      function loop(t) {
+        draw(t);
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+      setConnection(socket.connected);
+    </script>
+  </body>
 </html>

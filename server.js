@@ -1,114 +1,111 @@
-
-'use strict';
-
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const QRCode = require('qrcode');
-const path = require('path');
-const crypto = require('crypto');
+"use strict";
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const QRCode = require("qrcode");
+const path = require("path");
+const crypto = require("crypto");
 
 const app = express();
-app.disable('x-powered-by');
-
+app.disable("x-powered-by");
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
-  transports: ['polling', 'websocket'],
-  maxHttpBufferSize: 12000
+  transports: ["polling", "websocket"],
+  maxHttpBufferSize: 12000,
 });
-
-// HTML sempre atualizado depois de um deploy.
-app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: 0,
-  setHeaders: res => res.setHeader('Cache-Control', 'no-store')
-}));
-
+// HTML sempre atualizado depois de um deploy: evita misturar cliente antigo com servidor novo.
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    maxAge: 0,
+    setHeaders: (res) => res.setHeader("Cache-Control", "no-store"),
+  }),
+);
 const PORT = process.env.PORT || 3000;
 const LIMIT = 4;
 const STAGES = 5;
 const ROUND_MS = 22000;
-
-// As duas últimas fases aceleram bastante.
+// As duas últimas fases aceleram de verdade, mantendo a dificuldade gradual.
 const SPEED = [1, 1.28, 1.72, 2.7, 4.0];
 const SPAWN_MS = [1000, 850, 650, 425, 265];
-
 const GRACE_MS = 90000;
-const COLORS = ['#5eead4', '#818cf8', '#fb7185', '#fbbf24'];
-
+// Reação Surpresa: só Corrida Individual, após 5 acertos consecutivos.
+const SPECIAL_STREAK = 5;
+const SPECIAL_COOLDOWN = 12000;
+const TARGET_SHIELD = 8000;
+const POWERS = {
+  contamination: { duration: 5000, title: "CONTAMINAÇÃO" },
+  acceleration: { duration: 4000, title: "ACELERAÇÃO" },
+  inhibitor: { duration: 5000, title: "INIBIDOR" },
+};
+const COLORS = ["#5eead4", "#818cf8", "#fb7185", "#fbbf24"];
 const DATA = [
   {
-    polymer: 'PVC',
-    monomer: 'Cloreto de vinila',
-    color: '#34d399',
-    formula: 'n CH₂=CHCl → [–CH₂–CHCl–]ₙ',
-    use: 'Canos e revestimentos',
-    fact: 'Muitas moléculas de cloreto de vinila se ligam em uma longa cadeia de PVC.'
+    polymer: "PVC",
+    monomer: "Cloreto de vinila",
+    color: "#34d399",
+    formula: "n CH₂=CHCl → [–CH₂–CHCl–]ₙ",
+    use: "Canos e revestimentos",
+    fact: "Muitas moléculas de cloreto de vinila se ligam em uma longa cadeia de PVC.",
   },
   {
-    polymer: 'Polietileno',
-    monomer: 'Eteno',
-    color: '#60a5fa',
-    formula: 'n CH₂=CH₂ → [–CH₂–CH₂–]ₙ',
-    use: 'Sacolas e embalagens',
-    fact: 'Várias moléculas de eteno se ligam para formar polietileno.'
+    polymer: "Polietileno",
+    monomer: "Eteno",
+    color: "#60a5fa",
+    formula: "n CH₂=CH₂ → [–CH₂–CH₂–]ₙ",
+    use: "Sacolas e embalagens",
+    fact: "Várias moléculas de eteno se ligam para formar polietileno.",
   },
   {
-    polymer: 'Poliestireno',
-    monomer: 'Estireno',
-    color: '#fbbf24',
-    formula: 'n CH₂=CH–C₆H₅ → [–CH₂–CH(C₆H₅)–]ₙ',
-    use: 'Copos e isopor (EPS)',
-    fact: 'Estirenos se unem em cadeias de poliestireno.'
+    polymer: "Poliestireno",
+    monomer: "Estireno",
+    color: "#fbbf24",
+    formula: "n CH₂=CH–C₆H₅ → [–CH₂–CH(C₆H₅)–]ₙ",
+    use: "Copos e isopor (EPS)",
+    fact: "Estirenos se unem em cadeias de poliestireno.",
   },
   {
-    polymer: 'PTFE (Teflon)',
-    monomer: 'Tetrafluoroetileno',
-    color: '#a78bfa',
-    formula: 'n CF₂=CF₂ → [–CF₂–CF₂–]ₙ',
-    use: 'Revestimentos de baixo atrito',
-    fact: 'O tetrafluoroetileno forma cadeias de PTFE.'
+    polymer: "PTFE (Teflon)",
+    monomer: "Tetrafluoroetileno",
+    color: "#a78bfa",
+    formula: "n CF₂=CF₂ → [–CF₂–CF₂–]ₙ",
+    use: "Revestimentos de baixo atrito",
+    fact: "O tetrafluoroetileno forma cadeias de PTFE.",
   },
   {
-    polymer: 'Polipropileno',
-    monomer: 'Propeno',
-    color: '#f472b6',
-    formula: 'n CH₂=CH–CH₃ → [–CH₂–CH(CH₃)–]ₙ',
-    use: 'Potes e tampas',
-    fact: 'Propenos se ligam em cadeias de polipropileno.'
-  }
+    polymer: "Polipropileno",
+    monomer: "Propeno",
+    color: "#f472b6",
+    formula: "n CH₂=CH–CH₃ → [–CH₂–CH(CH₃)–]ₙ",
+    use: "Potes e tampas",
+    fact: "Propenos se ligam em cadeias de polipropileno.",
+  },
 ];
-
 const rooms = new Map();
-const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
+const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const random = (a, b) => a + Math.random() * (b - a);
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-const makeId = () => crypto.randomBytes(12).toString('hex');
-
+const makeId = () => crypto.randomBytes(12).toString("hex");
 function makeCode() {
   let code;
-
   do {
     code = Array.from(
       crypto.randomBytes(5),
-      b => letters[b % letters.length]
-    ).join('');
+      (b) => letters[b % letters.length],
+    ).join("");
   } while (rooms.has(code));
-
   return code;
 }
-
 function validToken(t) {
-  return typeof t === 'string' &&
-    /^[a-zA-Z0-9_-]{20,120}$/.test(t);
+  return typeof t === "string" && /^[a-zA-Z0-9_-]{20,120}$/.test(t);
 }
-
 function nameOf(n) {
-  return typeof n === 'string'
-    ? (n.replace(/[<>\u0000-\u001f\u007f]/g, '').trim().slice(0, 18) || 'Cientista')
-    : 'Cientista';
+  return typeof n === "string"
+    ? n
+        .replace(/[<>\u0000-\u001f\u007f]/g, "")
+        .trim()
+        .slice(0, 18) || "Cientista"
+    : "Cientista";
 }
-
 function publicPlayer(p) {
   return {
     id: p.id,
@@ -118,21 +115,21 @@ function publicPlayer(p) {
     hits: p.hits,
     mistakes: p.mistakes,
     streak: p.streak,
+    chain: p.chain,
+    pendingSpecial: p.pendingSpecial,
+    effect: p.effect && p.effect.until > Date.now() ? p.effect : null,
     color: p.color,
-    connected: p.connected
+    connected: p.connected,
   };
 }
-
 function roster(r) {
   return [...r.players.values()]
     .map(publicPlayer)
-    .sort((a, b) =>
-      b.score - a.score ||
-      b.hits - a.hits ||
-      a.name.localeCompare(b.name)
+    .sort(
+      (a, b) =>
+        b.score - a.score || b.hits - a.hits || a.name.localeCompare(b.name),
     );
 }
-
 function info(r) {
   return {
     code: r.code,
@@ -142,26 +139,24 @@ function info(r) {
     players: roster(r),
     stage: r.stage,
     maxPlayers: LIMIT,
-    countdown: r.state === 'countdown'
-      ? Math.max(0, Math.ceil((r.countdownUntil - Date.now()) / 1000))
-      : 0,
+    countdown:
+      r.state === "countdown"
+        ? Math.max(0, Math.ceil((r.countdownUntil - Date.now()) / 1000))
+        : 0,
     countdownUntil: r.countdownUntil,
-    remaining: r.state === 'playing'
-      ? Math.max(0, r.stageUntil - Date.now())
-      : 0,
-    roundId: r.roundId
+    remaining:
+      r.state === "playing" ? Math.max(0, r.stageUntil - Date.now()) : 0,
+    roundId: r.roundId,
   };
 }
-
 function emitInfo(r) {
-  io.to(r.code).emit('room:info', info(r));
+  io.to(r.code).emit("room:info", info(r));
 }
-
 function createRoom(mode) {
   const r = {
     code: makeCode(),
     mode,
-    state: 'lobby',
+    state: "lobby",
     hostId: null,
     players: new Map(),
     privateDrops: new Map(),
@@ -172,86 +167,56 @@ function createRoom(mode) {
     countdownUntil: 0,
     stageUntil: 0,
     spawnAt: 0,
-    lastTick: Date.now()
+    lastTick: Date.now(),
   };
-
   rooms.set(r.code, r);
   return r;
 }
-
 function detach(socket, intentional = false) {
-  const code = socket.data.code;
-  const id = socket.data.playerId;
-
+  const code = socket.data.code,
+    id = socket.data.playerId;
   socket.data.code = null;
   socket.data.playerId = null;
-
   if (!code || !id) return;
-
   socket.leave(code);
-
-  const r = rooms.get(code);
-  const p = r?.players.get(id);
-
-  // Desconexão antiga não expulsa a sessão nova.
+  const r = rooms.get(code),
+    p = r?.players.get(id);
+  // Desconexão antiga de uma aba substituída nunca expulsa a sessão nova.
   if (!p || p.socketId !== socket.id) return;
-
   p.socketId = null;
   p.connected = false;
   p.disconnectedAt = Date.now();
-
   if (intentional) {
     r.players.delete(id);
     r.privateDrops.delete(id);
-
-    if (r.hostId === id) {
-      r.hostId = [...r.players.keys()][0] || null;
-    }
+    if (r.hostId === id) r.hostId = [...r.players.keys()][0] || null;
   }
-
   if (r.players.size === 0) {
     rooms.delete(code);
     return;
   }
-
   emitInfo(r);
 }
-
 function findToken(r, token) {
-  return [...r.players.values()].find(p => p.token === token);
+  return [...r.players.values()].find((p) => p.token === token);
 }
-
 function enter(socket, r, args) {
-  if (!validToken(args.token)) {
-    throw Error('Atualize a página e tente novamente.');
-  }
-
+  if (!validToken(args.token))
+    throw Error("Atualize a página e tente novamente.");
   let p = findToken(r, args.token);
-
   if (!p) {
-    if (!['lobby', 'finished'].includes(r.state)) {
-      throw Error('A partida já começou. Aguarde a próxima.');
-    }
-
-    if (r.players.size >= LIMIT) {
-      throw Error('Sala cheia (4 jogadores).');
-    }
+    if (!["lobby", "finished"].includes(r.state))
+      throw Error("A partida já começou. Aguarde a próxima.");
+    if (r.players.size >= LIMIT) throw Error("Sala cheia (4 jogadores).");
   }
-
-  // Troca de sala é intencional.
+  // Troca de sala é intencional; reentrada na mesma sala não é.
   if (
     socket.data.code &&
-    (
-      socket.data.code !== r.code ||
-      socket.data.playerId !== p?.id
-    )
-  ) {
+    (socket.data.code !== r.code || socket.data.playerId !== p?.id)
+  )
     detach(socket, true);
-  }
-
   if (!p) {
     const id = makeId();
-
     p = {
       id,
       token: args.token,
@@ -259,557 +224,457 @@ function enter(socket, r, args) {
       connected: false,
       disconnectedAt: 0,
       name: nameOf(args.name),
-      x: .5,
+      x: 0.5,
       score: 0,
       hits: 0,
       mistakes: 0,
       streak: 0,
       learned: new Set(),
       color: COLORS[r.players.size % COLORS.length],
-      moveAt: 0
+      moveAt: 0,
+      chain: 0,
+      pendingSpecial: false,
+      specialCooldownUntil: 0,
+      effect: null,
+      shieldUntil: 0,
+      captureHalfWidth: 0.022,
     };
-
     r.players.set(id, p);
     r.privateDrops.set(id, []);
-
     if (!r.hostId) r.hostId = id;
   }
-
-  // Substitui a conexão sem duplicar o participante.
+  // Se outra conexão usou esta sessão, só ela sai; o participante continua.
   if (p.socketId && p.socketId !== socket.id) {
     const old = io.sockets.sockets.get(p.socketId);
-
     if (old) {
       old.data.playerId = null;
       old.data.code = null;
       old.leave(r.code);
-      old.emit('room:replaced');
+      old.emit("room:replaced");
       old.disconnect(true);
     }
   }
-
   p.socketId = socket.id;
   p.connected = true;
   p.disconnectedAt = 0;
-
   socket.join(r.code);
   socket.data.code = r.code;
   socket.data.playerId = p.id;
-
-  const snapshot = {
-    ...info(r),
-    youId: p.id
-  };
-
-  socket.emit('room:joined', snapshot);
+  const snapshot = { ...info(r), youId: p.id };
+  socket.emit("room:joined", snapshot);
   emitInfo(r);
-
   return snapshot;
 }
-
-function spawn(r) {
-  const correct = Math.random() < .56;
-
+function spawn(r, forcedWrong = false) {
+  const correct = !forcedWrong && Math.random() < 0.56;
   const options = correct
     ? [r.stage]
-    : DATA.map((_, i) => i).filter(i => i !== r.stage);
-
+    : DATA.map((_, i) => i).filter((i) => i !== r.stage);
   const idx = options[Math.floor(Math.random() * options.length)];
-
   return {
     id: r.nextId++,
-    x: random(.19, .81),
-    y: -.065,
+    x: random(0.19, 0.81),
+    y: -0.065,
     idx,
-    vy: random(.19, .255) * SPEED[r.stage]
+    vy: random(0.19, 0.255) * SPEED[r.stage],
   };
 }
-
+// O servidor decide ataque, alvo e duração. Nunca aceita um 'acerto' enviado pelo cliente.
+function launchSpecial(r, p, now) {
+  if (
+    r.mode !== "race" ||
+    !p.connected ||
+    !p.pendingSpecial ||
+    now < p.specialCooldownUntil
+  )
+    return;
+  const targets = [...r.players.values()].filter(
+    (v) =>
+      v.id !== p.id &&
+      v.connected &&
+      (!v.effect || v.effect.until <= now) &&
+      v.shieldUntil <= now,
+  );
+  if (!targets.length) return; // Um especial fica armazenado, sem acumular outro.
+  const target = targets[Math.floor(Math.random() * targets.length)];
+  const types = Object.keys(POWERS),
+    type = types[Math.floor(Math.random() * types.length)];
+  const duration = POWERS[type].duration;
+  target.effect = { type, until: now + duration, fromId: p.id };
+  target.shieldUntil = now + duration + TARGET_SHIELD;
+  p.pendingSpecial = false;
+  p.specialCooldownUntil = now + SPECIAL_COOLDOWN;
+  io.to(r.code).emit("game:power", {
+    sourceId: p.id,
+    sourceName: p.name,
+    targetId: target.id,
+    targetName: target.name,
+    type,
+    title: POWERS[type].title,
+    until: target.effect.until,
+    durationMs: duration,
+    roundId: r.roundId,
+  });
+}
+function processSpecials(r, now) {
+  if (r.mode !== "race") return;
+  for (const p of r.players.values()) {
+    if (p.effect && p.effect.until <= now) p.effect = null;
+  }
+  for (const p of r.players.values())
+    if (p.pendingSpecial) launchSpecial(r, p, now);
+}
 function catchDrop(r, p, d) {
-  if (d.idx === r.stage) {
+  const right = d.idx === r.stage;
+  let points = 0;
+  if (right) {
     p.streak++;
     p.hits++;
-
     const bonus = p.streak % 3 === 0 ? 5 : 0;
-    p.score += 10 + bonus;
-
-    io.to(p.socketId).emit('game:hit', {
-      ok: true,
-      bonus,
-      x: d.x,
-      color: DATA[d.idx].color
-    });
-
+    const nominal = 10 + bonus;
+    const inhibited =
+      r.mode === "race" &&
+      p.effect?.type === "inhibitor" &&
+      p.effect.until > Date.now();
+    points = inhibited ? Math.ceil(nominal / 2) : nominal;
+    p.score += points;
+    if (r.mode === "race" && !p.pendingSpecial) {
+      p.chain++;
+      if (p.chain >= SPECIAL_STREAK) {
+        p.chain = 0;
+        p.pendingSpecial = true;
+      }
+    }
     if (!p.learned.has(r.stage)) {
       p.learned.add(r.stage);
-
-      io.to(p.socketId).emit(
-        'game:discovery',
-        DATA[r.stage]
-      );
+      if (p.socketId) io.to(p.socketId).emit("game:discovery", DATA[r.stage]);
     }
   } else {
     p.streak = 0;
+    p.chain = 0;
     p.mistakes++;
+    points = -Math.min(5, p.score);
     p.score = Math.max(0, p.score - 5);
-
-    io.to(p.socketId).emit('game:hit', {
-      ok: false,
-      bonus: 0,
-      x: d.x,
-      color: '#fb7185'
-    });
   }
+  // Difundido para TODOS: a pista da pessoa correta mostra brilho/partículas.
+  io.to(r.code).emit("game:hit", {
+    playerId: p.id,
+    ok: right,
+    points,
+    bonus: right && p.streak % 3 === 0,
+    id: d.id,
+    x: d.x,
+    y: d.y,
+    color: right ? DATA[d.idx].color : "#fb7185",
+    chain: p.chain,
+    pendingSpecial: p.pendingSpecial,
+    roundId: r.roundId,
+  });
+  if (right && r.mode === "race") launchSpecial(r, p, Date.now());
 }
-
-function updateDrops(r, dt) {
-  if (r.mode === 'arena') {
+// A colisão ocorre apenas quando o CENTRO da bolinha cruza a borda do copo
+// (boca desenhada em 81% da pista). Sem região vertical comprida e sem 'laterais'.
+const CATCH_PLANE = 0.81;
+function crossesCup(previousY, newY, p, d) {
+  return (
+    p.connected &&
+    previousY < CATCH_PLANE &&
+    newY >= CATCH_PLANE &&
+    Math.abs(p.x - d.x) <= p.captureHalfWidth
+  );
+}
+function updateDrops(r, dt, now) {
+  if (r.mode === "arena") {
     for (let i = r.drops.length - 1; i >= 0; i--) {
-      const d = r.drops[i];
+      const d = r.drops[i],
+        previousY = d.y;
       d.y += d.vy * dt;
-
-      let winner = null;
-      let dist = Infinity;
-
-      if (d.y >= .833 && d.y <= .977) {
-        for (const p of r.players.values()) {
-          if (!p.connected) continue;
-
-          const gap = Math.abs(p.x - d.x);
-
-          if (gap < .045 && gap < dist) {
-            winner = p;
-            dist = gap;
-          }
+      let winner = null,
+        dist = Infinity;
+      for (const p of r.players.values()) {
+        if (!crossesCup(previousY, d.y, p, d)) continue;
+        const gap = Math.abs(p.x - d.x);
+        if (gap < dist) {
+          winner = p;
+          dist = gap;
         }
       }
-
       if (winner) {
         catchDrop(r, winner, d);
         r.drops.splice(i, 1);
-      } else if (d.y > 1.08) {
-        r.drops.splice(i, 1);
-      }
+      } else if (d.y > 1.08) r.drops.splice(i, 1);
     }
-  } else {
+  } else
     for (const [id, drops] of r.privateDrops) {
       const p = r.players.get(id);
-
       if (!p || !p.connected) continue;
-
+      const speed =
+        p.effect?.type === "acceleration" && p.effect.until > now
+          ? r.stage >= 3
+            ? 1.15
+            : 1.3
+          : 1;
       for (let i = drops.length - 1; i >= 0; i--) {
-        const d = drops[i];
-        d.y += d.vy * dt;
-
-        if (
-          d.y >= .833 &&
-          d.y <= .977 &&
-          Math.abs(p.x - d.x) < .045
-        ) {
+        const d = drops[i],
+          previousY = d.y;
+        d.y += d.vy * dt * speed;
+        if (crossesCup(previousY, d.y, p, d)) {
           catchDrop(r, p, d);
           drops.splice(i, 1);
-        } else if (d.y > 1.08) {
-          drops.splice(i, 1);
-        }
+        } else if (d.y > 1.08) drops.splice(i, 1);
       }
     }
-  }
 }
-
 function startMatch(r) {
-  r.state = 'countdown';
+  r.state = "countdown";
   r.stage = 0;
   r.roundId++;
   r.drops = [];
   r.nextId = 1;
   r.privateDrops.clear();
-
   const all = [...r.players.values()];
-
   for (const [i, p] of all.entries()) {
-    p.x = r.mode === 'arena'
-      ? .10 + .80 * (i + .5) / all.length
-      : .5;
-
+    p.x = r.mode === "arena" ? 0.1 + (0.8 * (i + 0.5)) / all.length : 0.5;
     p.score = 0;
     p.hits = 0;
     p.mistakes = 0;
     p.streak = 0;
+    p.chain = 0;
+    p.pendingSpecial = false;
+    p.specialCooldownUntil = 0;
+    p.effect = null;
+    p.shieldUntil = 0;
     p.learned.clear();
-
     r.privateDrops.set(p.id, []);
   }
-
   r.countdownUntil = Date.now() + 3500;
   r.stageUntil = 0;
   r.spawnAt = 0;
   r.lastTick = Date.now();
-
   emitInfo(r);
 }
-
 function finish(r) {
-  r.state = 'finished';
+  r.state = "finished";
   r.countdownUntil = 0;
   r.drops = [];
-
-  io.to(r.code).emit('game:finished', {
+  io.to(r.code).emit("game:finished", {
     players: roster(r),
     mode: r.mode,
-    roundId: r.roundId
+    roundId: r.roundId,
   });
-
   emitInfo(r);
 }
-
-// Atualização da lógica do jogo.
 function tick() {
   const now = Date.now();
-
   for (const r of rooms.values()) {
-    const dt = clamp(
-      (now - r.lastTick) / 1000,
-      0,
-      .12
-    );
-
+    const dt = clamp((now - r.lastTick) / 1000, 0, 0.12);
     r.lastTick = now;
-
-    if (
-      r.state === 'countdown' &&
-      now >= r.countdownUntil
-    ) {
-      r.state = 'playing';
+    if (r.state === "countdown" && now >= r.countdownUntil) {
+      r.state = "playing";
       r.countdownUntil = 0;
       r.stageUntil = now + ROUND_MS;
       r.spawnAt = now + 400;
-
       emitInfo(r);
-
-      io.to(r.code).emit('game:stage', {
-        stage: r.stage,
-        roundId: r.roundId
-      });
+      io.to(r.code).emit("game:stage", { stage: r.stage, roundId: r.roundId });
     }
-
-    if (r.state !== 'playing') continue;
-
+    if (r.state !== "playing") continue;
     if (now >= r.stageUntil) {
       if (r.stage === STAGES - 1) {
         finish(r);
         continue;
       }
-
       r.stage++;
       r.stageUntil = now + ROUND_MS;
       r.spawnAt = now + 500;
       r.drops = [];
-
-      for (const p of r.players.values()) {
-        r.privateDrops.set(p.id, []);
-      }
-
-      io.to(r.code).emit('game:stage', {
-        stage: r.stage,
-        roundId: r.roundId
-      });
-
+      for (const p of r.players.values()) r.privateDrops.set(p.id, []);
+      io.to(r.code).emit("game:stage", { stage: r.stage, roundId: r.roundId });
       emitInfo(r);
     }
-
-    const interval = r.mode === 'arena'
-      ? Math.max(
-          205,
-          SPAWN_MS[r.stage] /
-          Math.sqrt(
-            Math.max(
-              1,
-              [...r.players.values()]
-                .filter(p => p.connected).length
-            )
+    processSpecials(r, now);
+    const interval =
+      r.mode === "arena"
+        ? Math.max(
+            205,
+            SPAWN_MS[r.stage] /
+              Math.sqrt(
+                Math.max(
+                  1,
+                  [...r.players.values()].filter((p) => p.connected).length,
+                ),
+              ),
           )
-        )
-      : SPAWN_MS[r.stage];
-
+        : SPAWN_MS[r.stage];
     let count = 0;
-
     while (now >= r.spawnAt && count++ < 3) {
-      if (r.mode === 'arena') {
-        r.drops.push(spawn(r));
-      } else {
+      if (r.mode === "arena") r.drops.push(spawn(r));
+      else
         for (const [id, arr] of r.privateDrops) {
-          if (r.players.get(id)?.connected) {
-            arr.push(spawn(r));
-          }
+          const p = r.players.get(id);
+          if (!p?.connected) continue;
+          arr.push(spawn(r));
+          // Mais 60% de impurezas em relação à taxa básica (44% das gotas).
+          if (
+            p.effect?.type === "contamination" &&
+            p.effect.until > now &&
+            Math.random() < 0.264
+          )
+            arr.push(spawn(r, true));
         }
-      }
-
       r.spawnAt += interval;
     }
-
-    updateDrops(r, dt);
+    updateDrops(r, dt, now);
   }
 }
-
 setInterval(tick, 50);
-
-// Sincronização das pistas: 10 vezes por segundo.
 setInterval(() => {
   const now = Date.now();
-
   for (const r of rooms.values()) {
-    if (r.state !== 'playing') continue;
-
+    if (r.state !== "playing") continue;
     const base = {
       stage: r.stage,
       roundId: r.roundId,
       remaining: Math.max(0, r.stageUntil - now),
       players: roster(r),
-      mode: r.mode
+      mode: r.mode,
     };
-
-    const mapDrops = arr => arr.map(d => ({
-      id: d.id,
-      x: d.x,
-      y: d.y,
-      idx: d.idx,
-      vy: d.vy
-    }));
-
-    if (r.mode === 'arena') {
-      io.to(r.code).emit('game:world', {
-        ...base,
-        drops: mapDrops(r.drops)
-      });
-    } else {
+    // 10 atualizações por segundo; cada navegador desenha suas 4 pistas a até 60 FPS.
+    // Corrida envia as 4 coleções de gotas, não apenas a coleção do próprio jogador.
+    const mapDrops = (arr) =>
+      arr.map((d) => ({ id: d.id, x: d.x, y: d.y, idx: d.idx, vy: d.vy }));
+    if (r.mode === "arena")
+      io.to(r.code).emit("game:world", { ...base, drops: mapDrops(r.drops) });
+    else {
       const lanes = {};
-
       for (const p of r.players.values()) {
-        lanes[p.id] = mapDrops(
-          r.privateDrops.get(p.id) || []
-        );
+        const speed =
+          p.effect?.type === "acceleration" && p.effect.until > now
+            ? r.stage >= 3
+              ? 1.15
+              : 1.3
+            : 1;
+        lanes[p.id] = mapDrops(r.privateDrops.get(p.id) || []).map((d) => ({
+          ...d,
+          vy: d.vy * speed,
+        }));
       }
-
-      io.to(r.code).emit('game:world', {
-        ...base,
-        lanes
-      });
+      io.to(r.code).emit("game:world", { ...base, lanes });
     }
   }
 }, 100);
-
-// Limpeza de jogadores desconectados.
 setInterval(() => {
   const now = Date.now();
-
   for (const r of rooms.values()) {
-    for (const p of [...r.players.values()]) {
-      if (
-        !p.connected &&
-        now - p.disconnectedAt > GRACE_MS
-      ) {
+    for (const p of [...r.players.values()])
+      if (!p.connected && now - p.disconnectedAt > GRACE_MS) {
         r.players.delete(p.id);
         r.privateDrops.delete(p.id);
-
-        if (r.hostId === p.id) {
-          r.hostId = null;
-        }
+        if (r.hostId === p.id) r.hostId = null;
       }
-    }
-
     if (!r.players.size) {
       rooms.delete(r.code);
       continue;
     }
-
-    if (
-      !r.hostId ||
-      !r.players.get(r.hostId)?.connected
-    ) {
-      const connected = [...r.players.values()]
-        .find(p => p.connected);
-
+    if (!r.hostId || !r.players.get(r.hostId)?.connected) {
+      const connected = [...r.players.values()].find((p) => p.connected);
       if (
         connected &&
-        (
-          !r.hostId ||
-          now - r.players.get(r.hostId).disconnectedAt > 10000
-        )
-      ) {
+        (!r.hostId || now - r.players.get(r.hostId).disconnectedAt > 10000)
+      )
         r.hostId = connected.id;
-      }
     }
-
     emitInfo(r);
   }
 }, 5000);
 
-// Eventos multiplayer.
-io.on('connection', socket => {
+io.on("connection", (socket) => {
   socket.data.code = null;
   socket.data.playerId = null;
-
-  socket.on('room:create', (args = {}, ack = () => {}) => {
+  socket.on("room:create", (args = {}, ack = () => {}) => {
     try {
-      if (!['race', 'arena'].includes(args.mode)) {
-        throw Error('Modo inválido.');
-      }
-
-      if (!validToken(args.token)) {
-        throw Error('Atualize a página e tente novamente.');
-      }
-
+      if (!["race", "arena"].includes(args.mode)) throw Error("Modo inválido.");
+      if (!validToken(args.token))
+        throw Error("Atualize a página e tente novamente.");
+      // Evita sala abandonada quando alguém cria outra.
       detach(socket, true);
-
       const r = createRoom(args.mode);
       const result = enter(socket, r, args);
-
-      ack({
-        ok: true,
-        room: result
-      });
+      ack({ ok: true, room: result });
     } catch (e) {
-      ack({
-        ok: false,
-        error: e.message
-      });
+      ack({ ok: false, error: e.message });
     }
   });
-
-  socket.on('room:join', (args = {}, ack = () => {}) => {
+  socket.on("room:join", (args = {}, ack = () => {}) => {
     try {
-      const code = String(args.code || '')
-        .replace(/[^A-Za-z0-9]/g, '')
+      const code = String(args.code || "")
+        .replace(/[^A-Za-z0-9]/g, "")
         .toUpperCase()
         .slice(0, 5);
-
       const r = rooms.get(code);
-
-      if (!r) {
+      if (!r)
         throw Error(
-          'Sala não encontrada. Se o servidor reiniciou, crie outra.'
+          "Sala não encontrada. Se o servidor reiniciou, crie outra.",
         );
-      }
-
-      ack({
-        ok: true,
-        room: enter(socket, r, args)
-      });
+      ack({ ok: true, room: enter(socket, r, args) });
     } catch (e) {
-      ack({
-        ok: false,
-        error: e.message
-      });
+      ack({ ok: false, error: e.message });
     }
   });
-
-  socket.on('room:leave', () => {
-    detach(socket, true);
-  });
-
-  socket.on('room:start', (_args = {}, ack = () => {}) => {
+  socket.on("room:leave", () => detach(socket, true));
+  socket.on("room:start", (_args = {}, ack = () => {}) => {
     const r = rooms.get(socket.data.code);
-
-    if (!r || r.hostId !== socket.data.playerId) {
-      return ack({
-        ok: false,
-        error: 'Só o líder pode iniciar.'
-      });
-    }
-
-    if (!['lobby', 'finished'].includes(r.state)) {
-      return ack({
-        ok: false,
-        error: 'Partida já iniciada.'
-      });
-    }
-
-    if (![...r.players.values()].some(p => p.connected)) {
-      return ack({
-        ok: false,
-        error: 'Sem jogadores conectados.'
-      });
-    }
-
+    if (!r || r.hostId !== socket.data.playerId)
+      return ack({ ok: false, error: "Só o líder pode iniciar." });
+    if (!["lobby", "finished"].includes(r.state))
+      return ack({ ok: false, error: "Partida já iniciada." });
+    if (![...r.players.values()].some((p) => p.connected))
+      return ack({ ok: false, error: "Sem jogadores conectados." });
     startMatch(r);
     ack({ ok: true });
   });
-
-  socket.on('game:move', x => {
+  // A largura da zona central vem do desenho real do copo na tela do jogador.
+  // O servidor valida e limita o valor; não utiliza a largura total da pista.
+  socket.on("game:layout", (ratio) => {
+    const r = rooms.get(socket.data.code),
+      p = r?.players.get(socket.data.playerId);
+    if (!p || p.socketId !== socket.id || !Number.isFinite(ratio)) return;
+    p.captureHalfWidth = clamp(ratio, 0.012, 0.032);
+  });
+  socket.on("game:move", (x) => {
     const r = rooms.get(socket.data.code);
-
-    if (!r || r.state !== 'playing') return;
-
+    if (!r || r.state !== "playing") return;
     const p = r.players.get(socket.data.playerId);
-
-    if (
-      !p ||
-      p.socketId !== socket.id ||
-      !Number.isFinite(x)
-    ) {
-      return;
-    }
-
+    if (!p || p.socketId !== socket.id || !Number.isFinite(x)) return;
     const now = Date.now();
-
     if (now - p.moveAt < 19) return;
-
     p.moveAt = now;
-    p.x = clamp(x, .045, .955);
+    p.x = clamp(x, 0.045, 0.955);
   });
-
-  socket.on('disconnect', () => {
-    detach(socket, false);
-  });
+  socket.on("disconnect", () => detach(socket, false));
 });
-
-// QR Code para entrar na sala.
-app.get('/api/qr/:code', async (req, res) => {
-  const code = String(req.params.code || '').toUpperCase();
-
-  if (
-    !/^[A-Z2-9]{5}$/.test(code) ||
-    !rooms.has(code)
-  ) {
-    return res.status(404).send('Sala não encontrada');
-  }
-
-  const proto = req.headers['x-forwarded-proto'] === 'https'
-    ? 'https'
-    : req.protocol;
-
-  const link = `${proto}://${req.get('host')}/?sala=${code}`;
-
+app.get("/api/qr/:code", async (req, res) => {
+  const code = String(req.params.code || "").toUpperCase();
+  if (!/^[A-Z2-9]{5}$/.test(code) || !rooms.has(code))
+    return res.status(404).send("Sala não encontrada");
+  const proto =
+    req.headers["x-forwarded-proto"] === "https" ? "https" : req.protocol;
+  const link = `${proto}://${req.get("host")}/?sala=${code}`;
   try {
-    res.set('Content-Type', 'image/svg+xml');
-    res.set('Cache-Control', 'no-store');
-
-    res.send(await QRCode.toString(link, {
-      type: 'svg',
-      margin: 1,
-      scale: 6,
-      color: {
-        dark: '#11283b',
-        light: '#ffffffff'
-      }
-    }));
-  } catch {
-    res.status(500).send(
-      'Não foi possível gerar o QR Code.'
+    res.set("Content-Type", "image/svg+xml");
+    res.set("Cache-Control", "no-store");
+    res.send(
+      await QRCode.toString(link, {
+        type: "svg",
+        margin: 1,
+        scale: 6,
+        color: { dark: "#11283b", light: "#ffffffff" },
+      }),
     );
+  } catch {
+    res.status(500).send("Não foi possível gerar o QR Code.");
   }
 });
-
-// Status do servidor.
-app.get('/health', (_req, res) => {
-  res.json({
-    ok: true,
-    rooms: rooms.size
-  });
-});
-
-httpServer.listen(PORT, () => {
-  console.log(
-    `PolyDrop v4 pista principal + arena na porta ${PORT}`
-  );
-});
+app.get("/health", (_req, res) => res.json({ ok: true, rooms: rooms.size }));
+httpServer.listen(PORT, () =>
+  console.log(`PolyDrop v7: especiais + colisão central na porta ${PORT}`),
+);
