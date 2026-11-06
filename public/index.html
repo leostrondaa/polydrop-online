@@ -220,7 +220,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #F5CF20;outline-offse
   </section>
   <section id="gameShell" class="game-shell"><main class="game-main"><div class="game-hud"><div class="game-target"><div id="stageLabel" class="small">FASE 1 / 5</div><h2 id="targetPolymer">Produza PVC</h2><div id="targetMonomer" class="mono">Pegue: Cloreto de vinila</div><div id="coopStatus" class="coop-status hide"><span id="teamGoal">META 0 / 80</span><span id="livesStatus">♥ 5/5</span></div><div id="specialStatus" class="special-status"><span>⚡ ESPECIAL</span><div id="specialBars" class="special-bars"><span></span><span></span><span></span><span></span><span></span></div><span id="specialText">0/5 acertos</span></div></div><div class="game-timer"><b id="timeLeft">22s</b><div id="timerCaption">RESTANTE</div></div></div><div id="stageProgress" class="progress-row"><span class="progress-cell current"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span></div><div id="board" class="board four-lanes race-view"><canvas id="canvas" aria-label="Campo do jogo, mova o béquer para capturar monômeros"></canvas><div class="board-label">Arraste para mover</div><div id="spectatorNotice" class="spectator-notice hidden">ELIMINADO — ASSISTINDO A EQUIPE</div><div id="countdown" class="float hidden">3</div><div id="attackBanner" class="attack-banner" role="status" aria-live="polite"></div><div id="reconnectNotice" class="reconnect-notice hidden">📡 Reconectando...</div><div id="discovery" class="discovery" role="status"><div class="hint">DESCOBERTA</div><h4 id="discoveryTitle">Eteno → Polietileno</h4><p id="discoveryFact"></p><p id="discoveryUse"></p><button id="closeDiscovery" title="Fechar">×</button></div></div><div class="hintbar"><span><strong id="modeTag">Corrida individual</strong> <span id="mobileRank">• Rank #1</span></span><span id="selfScore" class="score-mini">★ 0 pontos</span></div></main><aside class="scoreboard"><h3>Placar</h3><div class="entries" id="leaderboard"></div></aside></section>
   <section id="endScreen" class="screen container results"><h1 id="endTitle">Resultado</h1><div id="podium" class="podium"></div><div class="panel list"><h3 id="resultListTitle" class="section-title">Classificação</h3><div id="finalRanking"></div></div><div class="review-area"><button id="reviewToggle" class="secondary review-toggle" type="button">Revisão rápida · 3 perguntas</button><div id="reviewPanel" class="review-panel" hidden><div id="reviewMeta" class="review-meta">PERGUNTA 1 DE 3</div><h2 id="reviewQuestion" class="review-question">Qual monômero forma PVC?</h2><div id="reviewOptions" class="review-options"></div><p id="reviewFeedback" class="review-feedback" aria-live="polite"></p><button id="reviewNext" class="primary review-next" type="button" hidden>Próxima</button></div></div><div class="end-actions"><button id="playAgain" class="primary">Jogar de novo</button><button id="leaveEnd" class="secondary">Sair da sala</button></div><div id="endHint" class="helper" style="text-align:left"></div></section>
-
+  
   <div id="rulesOverlay" class="rules-overlay hidden" role="dialog" aria-modal="true" aria-label="Regras do modo de jogo">
    <div class="rules-card"><div class="rules-top"><span id="rulesMode">REGRAS · INDIVIDUAL</span><span class="rules-counter" id="rulesCounter">1 / 3</span></div><div class="rules-content" id="rulesContent" aria-live="polite"><h1 id="rulesTitle" class="rules-title">Pegue o monômero certo.</h1><p id="rulesText" class="rules-text">Arraste o copo para capturar.</p></div><div class="rules-progress" id="rulesProgress" aria-hidden="true"><span></span><span></span><span></span></div></div>
   </div>
@@ -395,6 +395,100 @@ function showDiscovery(d){
  clearTimeout(infoTimer);$('discovery').classList.add('show');
  infoTimer=setTimeout(()=>$('discovery').classList.remove('show'),3100);
 }
+// Sons surpresa: sempre ligados, sem botão. O navegador libera o áudio
+// depois da primeira interação (por exemplo, Criar sala ou Entrar).
+// Cinco memes enviados para esta versão: mesmo sorteio para todos na sala.
+// Som ligado por padrão e liberado pela primeira interação com a página.
+const ATTACK_SOUNDS=[
+ '/sounds/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-e-lutador.mp3',
+ '/sounds/som-do-zap-zap-estourado.mp3',
+ '/sounds/long-brain-fart.mp3',
+ '/sounds/fahhhhhhhhhhhhhh.mp3',
+ '/sounds/era-essa-peca.mp3'
+];
+const attackSamples=new Array(ATTACK_SOUNDS.length).fill(null);
+let attackSoundsRequested=false,attackAudioBus=null,attackNoiseBuffer=null,lastAttackSoundKey='',currentAttackSource=null;
+function getAudioContext(){
+ try{
+  if(!audioCtx){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;audioCtx=new A()}
+  return audioCtx;
+ }catch{return null}
+}
+function unlockGameAudio(){
+ const a=getAudioContext();if(!a)return;
+ if(a.state==='suspended')a.resume().catch(()=>{});
+ // Oscilador inaudível, iniciado no gesto para ajudar no desbloqueio no iOS.
+ try{const o=a.createOscillator(),g=a.createGain();g.gain.value=0;o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+.012)}catch{}
+ if(attackSoundsRequested)return;
+ attackSoundsRequested=true;
+ // Mesmo sem conexão de rede externa, as amostras são carregadas do próprio jogo.
+ ATTACK_SOUNDS.forEach((url,i)=>{
+  fetch(url).then(r=>{if(!r.ok)throw Error('Som indisponível');return r.arrayBuffer()})
+   .then(data=>a.decodeAudioData(data))
+   .then(buffer=>{attackSamples[i]=buffer})
+   .catch(()=>{}); // Se faltar um MP3, usa a explosão sintetizada abaixo.
+ });
+}
+document.addEventListener('pointerdown',unlockGameAudio,{capture:true,passive:true});
+document.addEventListener('keydown',unlockGameAudio,{capture:true});
+function attackBus(){
+ const a=getAudioContext();if(!a)return null;
+ if(!attackAudioBus){
+  const compressor=a.createDynamicsCompressor();
+  compressor.threshold.value=-19;compressor.knee.value=5;
+  compressor.ratio.value=12;compressor.attack.value=.004;compressor.release.value=.19;
+  const out=a.createGain();out.gain.value=.90;
+  compressor.connect(out);out.connect(a.destination);attackAudioBus=compressor;
+ }
+ return attackAudioBus;
+}
+function fallbackAttackSound(index){
+ const a=getAudioContext(),bus=attackBus();if(!a||!bus)return;
+ const t=a.currentTime;
+ try{
+  if(!attackNoiseBuffer){
+   attackNoiseBuffer=a.createBuffer(1,Math.ceil(a.sampleRate*.3),a.sampleRate);
+   const data=attackNoiseBuffer.getChannelData(0);
+   for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+  }
+  const n=a.createBufferSource(),filter=a.createBiquadFilter(),env=a.createGain();
+  n.buffer=attackNoiseBuffer;filter.type='bandpass';filter.frequency.value=500+index*210;filter.Q.value=.65;
+  env.gain.setValueAtTime(.001,t);env.gain.linearRampToValueAtTime(.5,t+.015);
+  env.gain.exponentialRampToValueAtTime(.001,t+.28);
+  n.connect(filter);filter.connect(env);env.connect(bus);n.start(t);n.stop(t+.3);
+  const o=a.createOscillator(),g=a.createGain();
+  o.type=index%2?'sawtooth':'square';
+  o.frequency.setValueAtTime(560+index*90,t);
+  o.frequency.exponentialRampToValueAtTime(85+index*11,t+.40);
+  g.gain.setValueAtTime(.001,t);g.gain.linearRampToValueAtTime(.28,t+.012);
+  g.gain.exponentialRampToValueAtTime(.001,t+.45);
+  o.connect(g);g.connect(bus);o.start(t);o.stop(t+.48);
+ }catch{}
+}
+// Todos escutam o MESMO som aleatório por ataque, sem adicionar eventos no servidor.
+function playSurpriseAttack(d){
+ const a=getAudioContext();if(!a||a.state!=='running')return;
+ const key=[d.roundId,d.until,d.sourceId,d.targetId].join('|');
+ if(key===lastAttackSoundKey)return;
+ lastAttackSoundKey=key;
+ let hash=2166136261;
+ for(let i=0;i<key.length;i++)hash=Math.imul(hash^key.charCodeAt(i),16777619);
+ const index=(hash>>>0)%ATTACK_SOUNDS.length;
+ const bus=attackBus(),buffer=attackSamples[index];
+ if(currentAttackSource){
+  try{currentAttackSource.stop()}catch{}
+  currentAttackSource=null;
+ }
+ if(buffer&&bus){
+  try{
+   const src=a.createBufferSource();src.buffer=buffer;src.connect(bus);
+   currentAttackSource=src;
+   src.onended=()=>{if(currentAttackSource===src)currentAttackSource=null};
+   src.start();
+  }catch{currentAttackSource=null;fallbackAttackSound(index)}
+ }else fallbackAttackSound(index);
+}
+
 function sound(good){
  if(!soundsOn)return;
  try{
@@ -461,6 +555,7 @@ function updateSpecialStatus(p){
 function showAttack(d){
  if((room?.mode||world?.mode)!=='race')return;
  if(room?.roundId&&d.roundId&&room.roundId!==d.roundId)return;
+ playSurpriseAttack(d);
  const messages={contamination:'☣️ CONTAMINAÇÃO TOTAL',acceleration:'⚡ REAÇÃO TURBO',inhibitor:'🧬 INIBIDOR EXTREMO'};
  const msg=(d.sourceName||'Alguém')+' atacou '+(d.targetName||'um jogador')+'!';
  $('attackBanner').textContent=msg+' · '+(messages[d.type]||'REAÇÃO SURPRESA');

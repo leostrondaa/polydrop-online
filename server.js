@@ -17,11 +17,10 @@ const PORT = process.env.PORT || 3000;
 const LIMIT = 4;
 const STAGES = 5;
 const ROUND_MS = 22000;
-
-const RULES_MS = 11400;
-const BRIEFING_MS = 3200;
-const FIRST_BRIEFING_MS = 3400;
-const STAGE_COUNTDOWN_MS = 3500;
+const RULES_MS = 11400; // 3 mensagens com 3,8s por cartão: tempo de leitura, sincronizado pela sala.
+const BRIEFING_MS = 3200; // Orientação curta dentro da pista, sem cartão.
+const FIRST_BRIEFING_MS = 3400; // Primeira função na pista antes da largada.
+const STAGE_COUNTDOWN_MS = 3500; // 3, 2, 1 e VAI! com 0,5s finais.
 // Cooperativo: objetivo por etapa, 5 erros individuais e funções herdadas.
 const COOP_LIVES = 5;
 const COOP_GOALS = [80,110,140,170,200];
@@ -164,7 +163,7 @@ function assignMissions(r){
   for(const p of r.players.values()){p.targetIdx=r.stage;p.targets=[r.stage];}
  }
 }
-// Não há geração, queda nem pontuação durante a apresentação da missão.
+// Nenhuma molécula cai enquanto a função de cada jogador aparece na pista.
 function beginBriefing(r,now){
  if(r.mode==='arena'){r.stageScore=0;r.stageGoal=COOP_GOALS[r.stage];}
  assignMissions(r);
@@ -330,7 +329,7 @@ function startMatch(r){
  }
  r.nextSpecialAt=now+FIRST_SPECIAL_DELAY;
  r.lastTick=now;
- // Todos veem as regras antes de o servidor sortear as missões e liberar a fase.
+ // Todos leem as regras antes de o servidor sortear os elementos e liberar a pista.
  r.state='rules';r.rulesUntil=now+RULES_MS;r.briefingUntil=0;r.countdownUntil=0;r.stageUntil=0;r.spawnAt=0;
  emitInfo(r);
 }
@@ -502,4 +501,4 @@ app.get('/api/qr/:code',async(req,res)=>{
  catch{res.status(500).send('Não foi possível gerar o QR Code.');}
 });
 app.get('/health',(_req,res)=>res.json({ok:true,rooms:rooms.size}));
-httpServer.listen(PORT,()=>console.log(`PolyDrop v16: regras animadas e revisao de quimica na porta ${PORT}`));
+httpServer.listen(PORT,()=>console.log(`PolyDrop v16.2: regras legiveis e instrucoes na pista na porta ${PORT}`));
