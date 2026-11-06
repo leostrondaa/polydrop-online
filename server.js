@@ -17,10 +17,16 @@ const PORT = process.env.PORT || 3000;
 const LIMIT = 4;
 const STAGES = 5;
 const ROUND_MS = 22000;
-const BRIEFING_MS = 6000; // Cartão de missão antes de cada fase; jogo pausado.
+const RULES_MS = 5400; // Três telas rápidas, uma regra por vez, sincronizadas na sala.
+const BRIEFING_MS = 4800; // Cartão de química por fase.
+const FIRST_BRIEFING_MS = 3600; // Evita uma espera longa depois das regras iniciais.
 const STAGE_COUNTDOWN_MS = 1800;
-// As duas últimas fases aceleram de verdade, mantendo a dificuldade gradual.
-const SPEED = [1,1.28,1.72,2.7,4.0];
+// Cooperativo: objetivo por etapa, 5 erros individuais e funções herdadas.
+const COOP_LIVES = 5;
+const COOP_GOALS = [80,110,140,170,200];
+const COOP_SPEED = [.84,1.02,1.24,1.52,1.65];
+// 5ª fase levemente mais lenta (~12,5% no individual e ~10,8% no cooperativo).
+const SPEED = [1,1.28,1.72,2.7,3.5];
 const SPAWN_MS = [1000,850,650,425,265];
 const GRACE_MS = 90000;
 // Reação Surpresa: só Corrida Individual, após 5 acertos consecutivos.
@@ -56,21 +62,24 @@ function makeCode() {
 function validToken(t) { return typeof t==='string' && /^[a-zA-Z0-9_-]{20,120}$/.test(t); }
 function nameOf(n) { return typeof n==='string' ? (n.replace(/[<>\u0000-\u001f\u007f]/g,'').trim().slice(0,18)||'Cientista'):'Cientista'; }
 function publicPlayer(p) {
- return { id:p.id, name:p.name, x:p.x, score:p.score, hits:p.hits, mistakes:p.mistakes, streak:p.streak, targetIdx:p.targetIdx, chain:p.chain, pendingSpecial:p.pendingSpecial, specialCooldownUntil:p.specialCooldownUntil,
+ return { id:p.id, name:p.name, x:p.x, score:p.score, hits:p.hits, mistakes:p.mistakes, streak:p.streak, targetIdx:p.targetIdx, targets:[...p.targets], lives:p.lives, eliminated:p.eliminated, chain:p.chain, pendingSpecial:p.pendingSpecial, specialCooldownUntil:p.specialCooldownUntil,
   effect:p.effect && p.effect.until>Date.now()?p.effect:null,
   color:p.color, connected:p.connected };
 }
 function roster(r) { return [...r.players.values()].map(publicPlayer).sort((a,b)=>b.score-a.score || b.hits-a.hits || a.name.localeCompare(b.name)); }
 function info(r) {
  return {code:r.code,mode:r.mode,state:r.state,hostId:r.hostId,players:roster(r),stage:r.stage,maxPlayers:LIMIT,
+  rulesUntil:r.state==='rules'?r.rulesUntil:0,
   briefingUntil:r.state==='briefing'?r.briefingUntil:0,
   countdown:r.state==='countdown'?Math.max(0,Math.ceil((r.countdownUntil-Date.now())/1000)):0,
-  countdownUntil:r.countdownUntil,remaining:r.state==='playing'?Math.max(0,r.stageUntil-Date.now()):0,roundId:r.roundId};
+  countdownUntil:r.countdownUntil,remaining:r.state==='playing'&&r.mode==='race'?Math.max(0,r.stageUntil-Date.now()):0,
+  teamScore:r.teamScore,stageScore:r.stageScore,stageGoal:r.stageGoal,coopLives:COOP_LIVES,result:r.result,roundId:r.roundId};
 }
 function emitInfo(r){ io.to(r.code).emit('room:info',info(r)); }
 function createRoom(mode){
  const r={code:makeCode(),mode,state:'lobby',hostId:null,players:new Map(),privateDrops:new Map(),drops:[],nextId:1,
-  stage:0,roundId:0,briefingUntil:0,countdownUntil:0,stageUntil:0,spawnAt:0,nextSpecialAt:0,lastTick:Date.now()};
+  stage:0,roundId:0,rulesUntil:0,briefingUntil:0,countdownUntil:0,stageUntil:0,spawnAt:0,nextSpecialAt:0,lastTick:Date.now(),
+  stageRoles:[],coopRoleCount:0,teamScore:0,stageScore:0,stageGoal:COOP_GOALS[0],result:null};
  rooms.set(r.code,r);return r;
 }
 function detach(socket, intentional=false){
@@ -87,6 +96,7 @@ function detach(socket, intentional=false){
   if(r.hostId===id)r.hostId=[...r.players.keys()][0]||null;
  }
  if(r.players.size===0){rooms.delete(code);return;}
+ if(r.mode==='arena'&&r.state!=='lobby')rebalanceRoles(r);
  emitInfo(r);
 }
 function findToken(r,token){return [...r.players.values()].find(p=>p.token===token);}
@@ -102,7 +112,7 @@ function enter(socket,r,args){
  if(!p){
   const id=makeId();
   p={id,token:args.token,socketId:null,connected:false,disconnectedAt:0,name:nameOf(args.name),x:.5,score:0,hits:0,mistakes:0,streak:0,
-    targetIdx:0,learned:new Set(),color:COLORS[r.players.size%COLORS.length],moveAt:0,
+    targetIdx:0,targets:[],lives:COOP_LIVES,eliminated:false,learned:new Set(),color:COLORS[r.players.size%COLORS.length],moveAt:0,
     chain:0,pendingSpecial:false,specialCooldownUntil:0,effect:null,shieldUntil:0,
     collisionGeometry:Collision.geometryForLane(376,480),moveSeq:-1};
   r.players.set(id,p);
@@ -115,29 +125,49 @@ function enter(socket,r,args){
   if(old){old.data.playerId=null;old.data.code=null;old.leave(r.code);old.emit('room:replaced');old.disconnect(true);}
  }
  p.socketId=socket.id;p.connected=true;p.disconnectedAt=0;
+ if(r.mode==='arena'&&r.state!=='lobby')rebalanceRoles(r);
  socket.join(r.code);socket.data.code=r.code;socket.data.playerId=p.id;
  const snapshot={...info(r),youId:p.id};
  socket.emit('room:joined',snapshot);
  emitInfo(r);
  return snapshot;
 }
-// A missão no laboratório é uma responsabilidade exclusiva por jogador.
-// São sorteados sem repetição 1 dos 5 monômeros disponíveis, a cada fase.
+// Cada etapa mantém o mesmo número de monômeros da equipe inicial.
+// Se um jogador morrer ou desconectar, outro herda os elementos sem dono.
+function coopActive(r){return [...r.players.values()].filter(p=>p.connected&&!p.eliminated);}
+function rebalanceRoles(r){
+ if(r.mode!=='arena')return;
+ const active=coopActive(r);
+ for(const p of r.players.values()){p.targets=[];p.targetIdx=-1;}
+ if(!active.length)return;
+ for(const role of r.stageRoles){
+  let owner=active.find(p=>p.id===role.ownerId);
+  if(!owner)owner=active.reduce((best,p)=>!best||p.targets.length<best.targets.length?p:best,null);
+  owner.targets.push(role.idx);
+ }
+ for(const p of active)p.targetIdx=p.targets[0]??-1;
+}
 function assignMissions(r){
  const deck=DATA.map((_,i)=>i);
  for(let i=deck.length-1;i>0;i--){
   const j=Math.floor(Math.random()*(i+1));
   [deck[i],deck[j]]=[deck[j],deck[i]];
  }
- let slot=0;
- for(const p of r.players.values()){
-  p.targetIdx=r.mode==='arena'?deck[slot++]:r.stage;
+ if(r.mode==='arena'){
+  const active=coopActive(r);
+  const count=Math.min(4,r.coopRoleCount||1);
+  r.stageRoles=deck.slice(0,count).map((idx,i)=>({idx,ownerId:active.length?active[i%active.length].id:null}));
+  rebalanceRoles(r);
+ }else{
+  r.stageRoles=[];
+  for(const p of r.players.values()){p.targetIdx=r.stage;p.targets=[r.stage];}
  }
 }
 // Não há geração, queda nem pontuação durante a apresentação da missão.
 function beginBriefing(r,now){
+ if(r.mode==='arena'){r.stageScore=0;r.stageGoal=COOP_GOALS[r.stage];}
  assignMissions(r);
- r.state='briefing';r.briefingUntil=now+BRIEFING_MS;
+ r.state='briefing';r.rulesUntil=0;r.briefingUntil=now+(r.stage===0?FIRST_BRIEFING_MS:BRIEFING_MS);
  r.countdownUntil=0;r.stageUntil=0;r.spawnAt=0;
  r.drops=[];
  for(const p of r.players.values()){
@@ -150,7 +180,7 @@ function beginBriefing(r,now){
 function spawn(r,forcedWrong=false){
  let idx;
  if(r.mode==='arena'){
-  const assigned=[...r.players.values()].filter(p=>p.connected).map(p=>p.targetIdx);
+  const assigned=r.stageRoles.map(role=>role.idx);
   const unassigned=DATA.map((_,i)=>i).filter(i=>!assigned.includes(i));
   // Distribuição justa: cerca de 75% dos itens são missões ativas,
   // divididos igualmente entre as responsabilidades dos jogadores.
@@ -162,7 +192,7 @@ function spawn(r,forcedWrong=false){
   const pool=correct?[r.stage]:DATA.map((_,i)=>i).filter(i=>i!==r.stage);
   idx=pool[Math.floor(Math.random()*pool.length)];
  }
- return{id:r.nextId++,x:random(.19,.81),y:-.065,idx,vy:random(.19,.255)*SPEED[r.stage],toxic:forcedWrong};
+ return{id:r.nextId++,x:random(.19,.81),y:-.065,idx,vy:random(.19,.255)*(r.mode==='arena'?COOP_SPEED[r.stage]:SPEED[r.stage]),toxic:forcedWrong};
 }
 // O servidor decide ataque, alvo e duração. Nunca aceita um 'acerto' enviado pelo cliente.
 function launchSpecial(r,p,now){
@@ -192,37 +222,53 @@ function processSpecials(r,now){
  for(const p of r.players.values())if(p.pendingSpecial)launchSpecial(r,p,now);
 }
 function catchDrop(r,p,d,observedY=d.y){
- const correctIdx=r.mode==='arena'?p.targetIdx:r.stage;
- const right=d.idx===correctIdx;
- let points=0;
+ const cooperative=r.mode==='arena';
+ const right=cooperative?p.targets.includes(d.idx):d.idx===r.stage;
+ let points=0,eliminatedNow=false;
  if(right){
   p.streak++;p.hits++;
   const bonus=p.streak%3===0?5:0;
   const nominal=10+bonus;
-  const inhibited=r.mode==='race'&&p.effect?.type==='inhibitor'&&p.effect.until>Date.now();
+  const inhibited=!cooperative&&p.effect?.type==='inhibitor'&&p.effect.until>Date.now();
   points=inhibited?0:nominal;
   p.score+=points;
-  if(r.mode==='race'&&!p.pendingSpecial&&!inhibited){
+  if(cooperative){r.stageScore+=points;r.teamScore+=points;}
+  if(!cooperative&&!p.pendingSpecial&&!inhibited){
    p.chain++;
    if(p.chain>=SPECIAL_STREAK){p.chain=0;p.pendingSpecial=true;}
   }
-  if(!p.learned.has(correctIdx)){
-   p.learned.add(correctIdx);
-   if(p.socketId)io.to(p.socketId).emit('game:discovery',DATA[correctIdx]);
+  if(!p.learned.has(d.idx)){
+   p.learned.add(d.idx);
+   if(p.socketId)io.to(p.socketId).emit('game:discovery',DATA[d.idx]);
   }
  }else{
   p.streak=0;p.chain=0;p.mistakes++;
-  const contaminated=r.mode==='race'&&p.effect?.type==='contamination'&&p.effect.until>Date.now();
-  const penalty=contaminated?10:5;
-  points=-Math.min(penalty,p.score);p.score=Math.max(0,p.score-penalty);
+  if(cooperative){
+   p.lives=Math.max(0,p.lives-1);
+   if(p.lives===0){p.eliminated=true;eliminatedNow=true;rebalanceRoles(r);}
+  }else{
+   const contaminated=p.effect?.type==='contamination'&&p.effect.until>Date.now();
+   const penalty=contaminated?10:5;
+   points=-Math.min(penalty,p.score);p.score=Math.max(0,p.score-penalty);
+  }
  }
- // Difundido para TODOS: a pista da pessoa correta mostra brilho/partículas.
  io.to(r.code).emit('game:hit',{
-  playerId:p.id,ok:right,points,inhibited:right&&points===0,bonus:right&&p.streak%3===0,
-  id:d.id,x:d.x,y:observedY,color:right?DATA[d.idx].color:'#F2F2F2',
-  chain:p.chain,pendingSpecial:p.pendingSpecial,roundId:r.roundId
+  playerId:p.id,mode:r.mode,ok:right,points,lifeLost:cooperative&&!right,
+  lives:p.lives,eliminated:p.eliminated,inhibited:right&&points===0,
+  bonus:right&&p.streak%3===0,id:d.id,x:d.x,y:observedY,
+  color:right?DATA[d.idx].color:'#F2F2F2',chain:p.chain,pendingSpecial:p.pendingSpecial,roundId:r.roundId
  });
- if(right&&r.mode==='race')launchSpecial(r,p,Date.now());
+ if(cooperative){
+  if(eliminatedNow)io.to(r.code).emit('game:eliminated',{playerId:p.id,name:p.name,roundId:r.roundId});
+  if(![...r.players.values()].some(v=>!v.eliminated)){
+   finish(r,'defeat');return;
+  }
+  if(r.stageScore>=r.stageGoal){
+   if(r.stage===STAGES-1){finish(r,'victory');return;}
+   r.stage++;beginBriefing(r,Date.now());return;
+  }
+  emitInfo(r);
+ }else if(right)launchSpecial(r,p,Date.now());
 }
 // v13: NENHUMA captura automática. O cliente detecta o toque real que está
 // mostrando na tela e envia uma tentativa. O servidor valida a geometria,
@@ -270,46 +316,58 @@ function validateClientCatch(r,p,g,now){
 function startMatch(r){
  const now=Date.now();
  r.stage=0;r.roundId++;r.drops=[];r.nextId=1;r.privateDrops.clear();
+ r.teamScore=0;r.stageScore=0;r.stageGoal=COOP_GOALS[0];r.result=null;
+ r.coopRoleCount=r.mode==='arena'?[...r.players.values()].filter(p=>p.connected).length:0;
  const all=[...r.players.values()];
  for(const [i,p] of all.entries()){
   p.x=r.mode==='arena'?.10+.80*(i+.5)/all.length:.5;
   p.score=0;p.hits=0;p.mistakes=0;p.streak=0;p.chain=0;
+  p.lives=COOP_LIVES;p.eliminated=false;p.targets=[];
   p.pendingSpecial=false;p.specialCooldownUntil=now+FIRST_SPECIAL_DELAY;
   p.effect=null;p.shieldUntil=0;p.moveSeq=-1;p.learned.clear();
   r.privateDrops.set(p.id,[]);
  }
  r.nextSpecialAt=now+FIRST_SPECIAL_DELAY;
  r.lastTick=now;
- beginBriefing(r,now);
+ // Todos veem as regras antes de o servidor sortear as missões e liberar a fase.
+ r.state='rules';r.rulesUntil=now+RULES_MS;r.briefingUntil=0;r.countdownUntil=0;r.stageUntil=0;r.spawnAt=0;
+ emitInfo(r);
 }
-function finish(r){
- r.state='finished';r.briefingUntil=0;r.countdownUntil=0;r.drops=[];
- io.to(r.code).emit('game:finished',{players:roster(r),mode:r.mode,roundId:r.roundId});emitInfo(r);
+function finish(r,result='time'){
+ r.state='finished';r.result=result;r.rulesUntil=0;r.briefingUntil=0;r.countdownUntil=0;r.drops=[];
+ io.to(r.code).emit('game:finished',{players:roster(r),mode:r.mode,result,
+  teamScore:r.teamScore,stage:r.stage,stageGoal:r.stageGoal,roundId:r.roundId});emitInfo(r);
 }
 function tick(){
  const now=Date.now();
  for(const r of rooms.values()){
   const dt=clamp((now-r.lastTick)/1000,0,.12);r.lastTick=now;
+  if(r.state==='rules'&&now>=r.rulesUntil){
+   beginBriefing(r,now);
+   continue;
+  }
   if(r.state==='briefing'&&now>=r.briefingUntil){
    r.state='countdown';r.briefingUntil=0;r.countdownUntil=now+STAGE_COUNTDOWN_MS;
    emitInfo(r);
   }
   if(r.state==='countdown'&&now>=r.countdownUntil){
-   r.state='playing';r.countdownUntil=0;r.stageUntil=now+ROUND_MS;r.spawnAt=now+400;
+   r.state='playing';r.countdownUntil=0;r.stageUntil=r.mode==='race'?now+ROUND_MS:0;r.spawnAt=now+400;
    emitInfo(r);io.to(r.code).emit('game:stage',{stage:r.stage,roundId:r.roundId});
   }
   if(r.state!=='playing')continue;
-  if(now>=r.stageUntil){
+  if(r.mode==='race'&&now>=r.stageUntil){
    if(r.stage===STAGES-1){finish(r);continue;}
    r.stage++;
    beginBriefing(r,now);
    continue; // Evita gerar moléculas durante o cartão.
   }
   processSpecials(r,now);
-  const interval=r.mode==='arena'?Math.max(205,SPAWN_MS[r.stage]/Math.sqrt(Math.max(1,[...r.players.values()].filter(p=>p.connected).length))):SPAWN_MS[r.stage];
+  const interval=r.mode==='arena'?Math.max(270,SPAWN_MS[r.stage]/Math.sqrt(Math.max(1,coopActive(r).length))):SPAWN_MS[r.stage];
   let count=0;
   while(now>=r.spawnAt&&count++<3){
-   if(r.mode==='arena')r.drops.push(spawn(r));
+   if(r.mode==='arena'){
+    if(coopActive(r).length)r.drops.push(spawn(r));
+   }
    else for(const [id,arr] of r.privateDrops){
     const p=r.players.get(id);if(!p?.connected)continue;
     arr.push(spawn(r));
@@ -329,7 +387,9 @@ setInterval(()=>{
  const now=Date.now();
  for(const r of rooms.values()){
   if(r.state!=='playing')continue;
-  const base={serverNow:now,stage:r.stage,roundId:r.roundId,remaining:Math.max(0,r.stageUntil-now),players:roster(r),mode:r.mode};
+  const base={serverNow:now,stage:r.stage,roundId:r.roundId,
+   remaining:r.mode==='race'?Math.max(0,r.stageUntil-now):0,players:roster(r),mode:r.mode,
+   teamScore:r.teamScore,stageScore:r.stageScore,stageGoal:r.stageGoal,coopLives:COOP_LIVES};
   // 10 atualizações por segundo; cada navegador desenha suas 4 pistas a até 60 FPS.
   // Corrida envia as 4 coleções de gotas, não apenas a coleção do próprio jogador.
   const mapDrops=arr=>arr.map(d=>({id:d.id,x:d.x,y:d.y,idx:d.idx,vy:d.vy,toxic:!!d.toxic}));
@@ -356,6 +416,7 @@ setInterval(()=>{
    const connected=[...r.players.values()].find(p=>p.connected);
    if(connected && (!r.hostId || now-r.players.get(r.hostId).disconnectedAt>10000))r.hostId=connected.id;
   }
+  if(r.mode==='arena'&&r.state==='playing')rebalanceRoles(r);
   emitInfo(r);
  }
 },5000);
@@ -406,7 +467,7 @@ io.on('connection',socket=>{
   const r=rooms.get(socket.data.code);
   if(!r||r.state!=='playing')return;
   const p=r.players.get(socket.data.playerId);
-  if(!p||p.socketId!==socket.id)return;
+  if(!p||p.socketId!==socket.id||(r.mode==='arena'&&p.eliminated))return;
   const x=typeof payload==='number'?payload:payload?.x;
   if(!Number.isFinite(x))return;
   const now=Date.now();
@@ -422,6 +483,7 @@ io.on('connection',socket=>{
   if(!r||r.state!=='playing')return ack({ok:false,reason:'not-playing'});
   const p=r.players.get(socket.data.playerId);
   if(!p||p.socketId!==socket.id)return ack({ok:false,reason:'not-player'});
+  if(r.mode==='arena'&&p.eliminated)return ack({ok:false,reason:'eliminated'});
   const hit=validateClientCatch(r,p,payload,Date.now());
   if(!hit)return ack({ok:false,reason:'invalid-contact'});
   hit.drops.splice(hit.index,1);
@@ -439,4 +501,4 @@ app.get('/api/qr/:code',async(req,res)=>{
  catch{res.status(500).send('Não foi possível gerar o QR Code.');}
 });
 app.get('/health',(_req,res)=>res.json({ok:true,rooms:rooms.size}));
-httpServer.listen(PORT,()=>console.log(`PolyDrop v14: captura visual e tema preto-amarelo na porta ${PORT}`));
+httpServer.listen(PORT,()=>console.log(`PolyDrop v16: regras animadas e revisao de quimica na porta ${PORT}`));
