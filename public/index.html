@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071523">
-<title>PolyDrop • Multiplayer 4 pistas v3</title>
+<title>PolyDrop • Multiplayer v4</title>
 <style>
 :root{color-scheme:dark;--bg:#071523;--text:#edf9ff;--muted:#9bb7c6;--mint:#5eead4;--aqua:#38bdf8;--line:#3c6572;--glass:#112b3bcf;--pink:#fb7185;--gold:#fbbf24}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}body{overflow-x:hidden}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.46}button:focus-visible,input:focus-visible{outline:3px solid #81e5f3;outline-offset:3px}button:active:not(:disabled){transform:translateY(1px)}
@@ -20,21 +20,23 @@
 .reconnect-notice.hidden{display:none}.reconnect-notice{position:absolute;inset:auto 12px 22px;z-index:9;text-align:center;border:1px solid #fbbf2499;border-radius:13px;background:#1b3342ee;color:#ffe7a0;font-weight:850;padding:12px;pointer-events:none}
 @media(max-width:620px){.hero-desc{margin:8px 0}.feature-row{margin-top:10px}.home{gap:8px}.home .panel{padding:17px}.mode{min-height:92px}.mode small{font-size:10px}.panel p{margin-bottom:9px}.lobby-head{margin-bottom:12px}.host-help{font-size:11px;padding:8px}.discovery{width:min(340px,calc(100% - 16px));min-width:0}.discovery p{line-height:1.3}.game-hud .small{font-size:9px}}
 
-/* PolyDrop v3 • quatro quadros ao vivo. Seu campo é sempre o primeiro. */
+/* PolyDrop v4 • corrida com pista principal e 3 miniaturas; arena única compartilhada. */
+/* Quadro principal recebe mais espaço; o destaque não tapa as moléculas. */
 .four-lanes{background:#091d2a;contain:layout paint}
 .four-lanes canvas{touch-action:none}
-.four-lanes .board-label{bottom:5px;left:13px;color:#92b9c9aa;font-size:9px}
-.four-lanes .float{left:25%;top:27%;font-size:clamp(30px,5vw,58px)}
-.four-lanes .feedback{left:25%;top:30%;font-size:24px}
-.four-lanes .discovery{top:8px;left:50%;max-width:min(380px,calc(100% - 12px))}
-@media(max-width:620px){
+.four-lanes .board-label{bottom:7px;left:13px;color:#a4d6ddaa;font-size:10px}
+.four-lanes.race-view .float{left:35%;top:43%;font-size:clamp(34px,5vw,60px)}
+.four-lanes.race-view .feedback{left:35%;top:34%;font-size:24px}
+.four-lanes.arena-view .float,.four-lanes.arena-view .feedback{left:50%;top:45%}
+.four-lanes .discovery{top:10px;left:50%;max-width:min(390px,calc(100% - 16px))}
+@media(max-width:690px){
  .game-shell{padding:0 5px 5px;gap:5px}.game-main{gap:5px}
  .game-hud{padding:7px 10px}.game-target h2{font-size:16px}.game-target .mono{font-size:10px}
  .game-target .small{font-size:9px}.game-timer b{font-size:19px}
  .progress-cell{height:4px}.hintbar{padding:6px 8px}
  .four-lanes .board-label{display:none}
- .four-lanes .float{left:25%;top:27%;font-size:34px}
- .four-lanes .feedback{left:25%;top:32%;font-size:18px}
+ .four-lanes.race-view .float{left:50%;top:31%;font-size:32px}
+ .four-lanes.race-view .feedback{left:50%;top:36%;font-size:19px}
  .four-lanes .discovery{padding:9px 36px 9px 12px;max-width:95%}
 }
 </style>
@@ -48,7 +50,7 @@
     <div class="panel"><h2>Vamos jogar?</h2><p>Escolha o modo e crie uma sala.</p><label class="small-label" for="name">Seu apelido</label><input class="input" id="name" maxlength="18" placeholder="Ex.: Marie Curie" autocomplete="nickname"><label class="small-label">Modo de jogo</label><div class="mode-grid"><button class="mode selected" data-mode="race"><span class="mode-icon">🏁</span><b>Corrida individual</b><small>Seu béquer, seus pontos.</small></button><button class="mode" data-mode="arena"><span class="mode-icon">⚔️</span><b>Laboratório compartilhado</b><small>Todos disputam as moléculas.</small></button></div><button id="createRoom" class="primary" style="margin-top:17px">CRIAR SALA →</button><div class="divider-text">TEM UM CÓDIGO?</div><div class="join"><input id="joinCode" class="input" maxlength="5" placeholder="CÓDIGO" aria-label="Código de cinco caracteres"><button id="joinRoom" class="secondary">Entrar</button></div><div id="homeError" class="error" role="alert"></div></div>
   </section>
   <section id="lobbyScreen" class="screen container lobby"><div class="lobby-head"><div><div class="eyebrow">Sala de espera</div><h1>Todo mundo pronto?</h1><p id="lobbyMode">Modo: Corrida individual</p></div><button id="leaveLobby" class="secondary">← Sair</button></div><div class="lobby-layout"><div class="panel"><h3 class="section-title">Jogadores na sala <span id="playerCount" class="badge">0 / 4</span></h3><div id="playerList" class="roster"></div><div id="hostHelp" class="host-help">Chame a turma pelo QR Code.</div><button id="startMatch" class="primary" style="margin-top:16px">COMEÇAR PARTIDA →</button></div><div class="panel"><h3 class="section-title">Convite <span class="badge">ONLINE</span></h3><div class="room-code"><div class="mini">CÓDIGO DA SALA</div><div id="roomCode" class="code-big">-----</div></div><div class="qr-shell"><img id="qr" alt="QR Code para entrar nesta sala" width="158" height="158"></div><div class="helper">Escaneie para entrar.</div><div class="action-row"><button id="copyLink" class="secondary">🔗 Copiar link</button><button id="shareLink" class="secondary">↗ Compartilhar</button></div></div></div></section>
-  <section id="gameShell" class="game-shell"><main class="game-main"><div class="game-hud"><div class="game-target"><div id="stageLabel" class="small">FASE 1 / 5</div><h2 id="targetPolymer">Produza PVC</h2><div id="targetMonomer" class="mono">Pegue: Cloreto de vinila</div></div><div class="game-timer"><b id="timeLeft">22s</b><div>RESTANTE</div></div></div><div id="stageProgress" class="progress-row"><span class="progress-cell current"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span></div><div id="board" class="board four-lanes"><canvas id="canvas" aria-label="Campo do jogo, mova o béquer para capturar monômeros"></canvas><div class="board-label">Sua pista: canto superior esquerdo • Arraste ou A/D</div><div id="countdown" class="float hidden">3</div><div id="reconnectNotice" class="reconnect-notice hidden">📡 Reconectando...</div><div id="feedback" class="feedback">+10</div><div id="discovery" class="discovery" role="status"><div class="hint">🧪 VOCÊ DESCOBRIU!</div><h4 id="discoveryTitle">Eteno → Polietileno</h4><p id="discoveryFact"></p><p id="discoveryUse"></p><button id="closeDiscovery" title="Fechar">×</button></div></div><div class="hintbar"><span>🧪 <strong id="modeTag">Corrida individual</strong> <span id="mobileRank">• Rank #1</span></span><span id="selfScore" class="score-mini">★ 0 pontos</span></div></main><aside class="scoreboard"><h3>🏆 Placar ao vivo</h3><div class="entries" id="leaderboard"></div><div class="info">✅ +10 certo<br>⚡ +5 combo<br>❌ −5 errado</div></aside></section>
+  <section id="gameShell" class="game-shell"><main class="game-main"><div class="game-hud"><div class="game-target"><div id="stageLabel" class="small">FASE 1 / 5</div><h2 id="targetPolymer">Produza PVC</h2><div id="targetMonomer" class="mono">Pegue: Cloreto de vinila</div></div><div class="game-timer"><b id="timeLeft">22s</b><div>RESTANTE</div></div></div><div id="stageProgress" class="progress-row"><span class="progress-cell current"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span></div><div id="board" class="board four-lanes race-view"><canvas id="canvas" aria-label="Campo do jogo, mova o béquer para capturar monômeros"></canvas><div class="board-label">Arraste o béquer • sua pista em destaque</div><div id="countdown" class="float hidden">3</div><div id="reconnectNotice" class="reconnect-notice hidden">📡 Reconectando...</div><div id="feedback" class="feedback">+10</div><div id="discovery" class="discovery" role="status"><div class="hint">🧪 VOCÊ DESCOBRIU!</div><h4 id="discoveryTitle">Eteno → Polietileno</h4><p id="discoveryFact"></p><p id="discoveryUse"></p><button id="closeDiscovery" title="Fechar">×</button></div></div><div class="hintbar"><span>🧪 <strong id="modeTag">Corrida individual</strong> <span id="mobileRank">• Rank #1</span></span><span id="selfScore" class="score-mini">★ 0 pontos</span></div></main><aside class="scoreboard"><h3>🏆 Placar ao vivo</h3><div class="entries" id="leaderboard"></div><div class="info">✅ +10 certo<br>⚡ +5 combo<br>❌ −5 errado</div></aside></section>
   <section id="endScreen" class="screen container results"><div class="eyebrow">Experimento concluído</div><h1>🏆 Pódio do laboratório</h1><p class="muted">Veja quem dominou o laboratório.</p><div id="podium" class="podium"></div><div class="panel list"><h3 class="section-title">Classificação completa <span class="badge">RESULTADO FINAL</span></h3><div id="finalRanking"></div></div><div class="end-actions"><button id="playAgain" class="primary">↻ NOVA PARTIDA</button><button id="leaveEnd" class="secondary">Sair da sala</button></div><div id="endHint" class="helper" style="text-align:left"></div></section>
   <div class="footer">PolyDrop • Química em jogo</div>
 </div>
@@ -254,6 +256,7 @@ function syncRoom(snapshot){
  if(!snapshot)return;
  if(room&&room.code!==snapshot.code)return;
  room={...snapshot};
+ updateBoardMode(room.mode);
  if(snapshot.youId)myId=snapshot.youId;
  storeRoom(room.code);history.replaceState(null,'',linkToRoom(room.code));
  updateLobby();
@@ -305,6 +308,7 @@ socket.on('game:stage',d=>{
 socket.on('game:world',d=>{
  if(!room)return;
  world=d;worldReceivedAt=performance.now();playing=true;
+ updateBoardMode(d.mode);
  if(uiState!=='game')showScreen('game');
  if(d.stage!==lastStage)updateStage(d.stage);
  updateBoardInfo();
@@ -318,13 +322,17 @@ socket.on('game:finished',d=>{
 });
 
 let boardW=700,boardH=600,pixelRatio=1;
-const GAP=7;
-const BOARD_PAD=7;
+const GAP=7, BOARD_PAD=7;
+function updateBoardMode(newMode){
+ const arena=newMode==='arena';
+ $('board').classList.toggle('arena-view',arena);
+ $('board').classList.toggle('race-view',!arena);
+ $('board').querySelector('.board-label').textContent=arena?'Uma arena • todos disputam juntos':'Sua pista grande • rivais ao vivo';
+}
 function sizeCanvas(){
  const rect=$('board').getBoundingClientRect();
  if(rect.width<=0||rect.height<=0)return;
  boardW=rect.width;boardH=rect.height;
- // 4 quadrantes: limitação de DPR evita sobrecarregar GPUs de celular.
  pixelRatio=Math.min(devicePixelRatio||1,1.75);
  canvas.width=Math.round(boardW*pixelRatio);canvas.height=Math.round(boardH*pixelRatio);
  ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);
@@ -335,10 +343,23 @@ function requestMove(x){
  const t=performance.now();
  if(t-lastMove>30&&socket.connected&&playing){lastMove=t;socket.emit('game:move',targetX)}
 }
-// Seu quadrante fica SEMPRE no alto à esquerda, mesmo se o ranking mudar.
+function arenaMode(){return (world?.mode||room?.mode)==='arena'}
 function laneRect(slot){
- const w=(boardW-BOARD_PAD*2-GAP)/2,h=(boardH-BOARD_PAD*2-GAP)/2;
- return{x:BOARD_PAD+(slot%2)*(w+GAP),y:BOARD_PAD+Math.floor(slot/2)*(h+GAP),w,h};
+ const innerW=boardW-2*BOARD_PAD,innerH=boardH-2*BOARD_PAD;
+ // Arena compartilhada: um campo apenas, não quatro cópias da mesma arena.
+ if(arenaMode())return{x:BOARD_PAD,y:BOARD_PAD,w:innerW,h:innerH,mini:false};
+ // Em celulares, a pista principal ocupa ~72% da altura. Miniaturas abaixo.
+ if(boardW<690){
+  const mainH=Math.max(170,(innerH-GAP)*.72),miniH=innerH-GAP-mainH;
+  if(slot===0)return{x:BOARD_PAD,y:BOARD_PAD,w:innerW,h:mainH,mini:false};
+  const miniW=(innerW-2*GAP)/3;
+  return{x:BOARD_PAD+(slot-1)*(miniW+GAP),y:BOARD_PAD+mainH+GAP,w:miniW,h:miniH,mini:true};
+ }
+ // Desktop e tablets na horizontal: pista grande à esquerda, miniaturas na lateral.
+ const mainW=(innerW-GAP)*.715,miniW=innerW-GAP-mainW;
+ if(slot===0)return{x:BOARD_PAD,y:BOARD_PAD,w:mainW,h:innerH,mini:false};
+ const miniH=(innerH-2*GAP)/3;
+ return{x:BOARD_PAD+mainW+GAP,y:BOARD_PAD+(slot-1)*(miniH+GAP),w:miniW,h:miniH,mini:true};
 }
 function lanePeople(){
  const all=world?.players||room?.players||[];
@@ -347,23 +368,22 @@ function lanePeople(){
  return [mine||{id:myId||'self',name:'Você',x:displayX,score:0,color:'#5eead4',connected:true},...others].slice(0,4);
 }
 function localTouch(event){
- const r=$('board').getBoundingClientRect(), lane=laneRect(0);
- const px=event.clientX-r.left,py=event.clientY-r.top;
- // Evita que um toque na pista de outro jogador altere o seu béquer.
- if(px<lane.x||px>lane.x+lane.w||py<lane.y||py>lane.y+lane.h)return null;
- return (px-lane.x)/lane.w;
+ const rect=$('board').getBoundingClientRect(),r=laneRect(0);
+ const px=event.clientX-rect.left,py=event.clientY-rect.top;
+ if(px<r.x||px>r.x+r.w||py<r.y||py>r.y+r.h)return null;
+ return(px-r.x)/r.w;
 }
 let touching=false;
 $('board').addEventListener('pointerdown',e=>{
  if(e.target.closest('#discovery'))return;
  const x=localTouch(e);if(x===null)return;
- touching=true;try{$('board').setPointerCapture(e.pointerId)}catch{};
+ touching=true;try{$('board').setPointerCapture(e.pointerId)}catch{}
  requestMove(x);
 });
 $('board').addEventListener('pointermove',e=>{
  if(!touching)return;
- const r=$('board').getBoundingClientRect(),lane=laneRect(0);
- requestMove((e.clientX-r.left-lane.x)/lane.w);
+ const rect=$('board').getBoundingClientRect(),r=laneRect(0);
+ requestMove((e.clientX-rect.left-r.x)/r.w);
 });
 $('board').addEventListener('pointerup',()=>touching=false);
 $('board').addEventListener('pointercancel',()=>touching=false);
@@ -374,49 +394,53 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>{buttons[e.code]=false});
 function rr(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
-function drawLaneBackdrop(r,person,slot,time){
- ctx.save();
- rr(r.x,r.y,r.w,r.h,11);ctx.clip();
+function drawLaneBackdrop(r,slot){
+ ctx.save();rr(r.x,r.y,r.w,r.h,r.mini?9:13);ctx.clip();
  const grad=ctx.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);
- grad.addColorStop(0,slot===0?'#123d47':'#142d42');grad.addColorStop(1,'#071b2c');
+ grad.addColorStop(0,slot===0?'#113b46':'#142f42');grad.addColorStop(1,'#071b2b');
  ctx.fillStyle=grad;ctx.fillRect(r.x,r.y,r.w,r.h);
  ctx.strokeStyle='#87d9ca0b';ctx.lineWidth=1;
- for(let x=20;x<r.w;x+=31){ctx.beginPath();ctx.moveTo(r.x+x,r.y);ctx.lineTo(r.x+x,r.y+r.h);ctx.stroke()}
- for(let y=20;y<r.h;y+=31){ctx.beginPath();ctx.moveTo(r.x,r.y+y);ctx.lineTo(r.x+r.w,r.y+y);ctx.stroke()}
- ctx.fillStyle='#23465588';ctx.fillRect(r.x,r.y+r.h-14,r.w,14);
+ const grid=r.mini?25:36;
+ for(let x=grid;x<r.w;x+=grid){ctx.beginPath();ctx.moveTo(r.x+x,r.y);ctx.lineTo(r.x+x,r.y+r.h);ctx.stroke()}
+ for(let y=grid;y<r.h;y+=grid){ctx.beginPath();ctx.moveTo(r.x,r.y+y);ctx.lineTo(r.x+r.w,r.y+y);ctx.stroke()}
+ const ground=r.mini?10:17;
+ ctx.fillStyle='#23465588';ctx.fillRect(r.x,r.y+r.h-ground,r.w,ground);
  ctx.restore();
- ctx.save();rr(r.x+0.75,r.y+0.75,r.w-1.5,r.h-1.5,11);
- ctx.strokeStyle=slot===0?'#5eead4':'#3f687b';ctx.lineWidth=slot===0?2.5:1.4;ctx.stroke();ctx.restore();
+ ctx.save();rr(r.x+1,r.y+1,r.w-2,r.h-2,r.mini?9:13);
+ ctx.strokeStyle=slot===0?'#5eead4':'#3f687b';ctx.lineWidth=slot===0?2.8:1.3;ctx.stroke();ctx.restore();
 }
 function drawLaneBanner(r,person,slot){
- ctx.save();
- ctx.fillStyle='#061927ec';
- rr(r.x+6,r.y+6,r.w-12,25,7);ctx.fill();
+ const mini=!!r.mini,pad=mini?4:8,bh=mini?21:29;
+ ctx.save();ctx.fillStyle='#061927eb';rr(r.x+pad,r.y+pad,r.w-2*pad,bh,mini?5:8);ctx.fill();
+ const name=person?(slot===0?'VOCÊ':person.name):'LIVRE';
+ const points=person?`${person.score||0}`:'';
  ctx.fillStyle=slot===0?'#8bfce5':person?.color||'#8aa5b4';
- ctx.font=`850 ${Math.min(12,Math.max(10,r.w*.038))}px system-ui`;
- ctx.textAlign='left';ctx.textBaseline='middle';
- const title=person?(slot===0?'VOCÊ':person.name):'AGUARDANDO...';
- const available=Math.max(35,r.w-80);let label=title;
- while(ctx.measureText(label).width>available&&label.length>4)label=label.slice(0,-2)+'…';
- ctx.fillText(label,r.x+15,r.y+19);
- if(person){ctx.fillStyle='#ffe29d';ctx.font='850 11px system-ui';ctx.textAlign='right';ctx.fillText((person.score||0)+' pts',r.x+r.w-15,r.y+19)}
+ ctx.font=`850 ${mini?9:13}px system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';
+ const available=Math.max(19,r.w-(mini?36:78));let display=name;
+ while(ctx.measureText(display).width>available&&display.length>2)display=display.slice(0,-2)+'…';
+ ctx.fillText(display,r.x+pad+7,r.y+pad+bh/2);
+ if(person){ctx.fillStyle='#ffe29d';ctx.font=`850 ${mini?9:12}px system-ui`;ctx.textAlign='right';ctx.fillText(points+(mini?'':' pts'),r.x+r.w-pad-7,r.y+pad+bh/2)}
  ctx.restore();
 }
+const SHORT_NAMES=['Vinila','Eteno','Estireno','TFE','Propeno'];
 function drawDropInLane(r,d,latency){
  const yFraction=d.y+(d.vy||0)*latency;
  if(yFraction<-.15||yFraction>1.18)return;
+ const info=DATA[d.idx]||DATA[0],mini=!!r.mini;
+ const width=mini?Math.max(29,Math.min(r.w*.86,110)):Math.min(230,r.w*.73);
+ const height=mini?Math.max(16,Math.min(23,r.h*.11)):Math.max(28,Math.min(40,r.h*.085));
  const cy=r.y+Math.max(0,yFraction)*r.h;
- const info=DATA[d.idx]||DATA[0];
- // Etiquetas largas ficam legíveis mesmo em pistas de 180px de largura.
- const width=Math.min(144,r.w*.70),height=Math.max(26,Math.min(35,r.h*.13));
- const cx=r.x+Math.max(width/2+5,Math.min(r.w-width/2-5,d.x*r.w));
- ctx.save();ctx.beginPath();ctx.rect(r.x+3,r.y+33,r.w-6,r.h-36);ctx.clip();
- ctx.shadowColor=info.color;ctx.shadowBlur=7;
- ctx.fillStyle='#173447';ctx.strokeStyle=info.color;ctx.lineWidth=2;
+ const cx=r.x+Math.max(width/2+4,Math.min(r.w-width/2-4,d.x*r.w));
+ ctx.save();rr(r.x+2,r.y+2,r.w-4,r.h-4,mini?7:11);ctx.clip();
+ ctx.shadowColor=info.color;ctx.shadowBlur=mini?4:10;
+ ctx.fillStyle='#193445';ctx.strokeStyle=info.color;ctx.lineWidth=mini?1.5:2.5;
  rr(cx-width/2,cy-height/2,width,height,height/2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
- ctx.fillStyle='#f4ffff';ctx.font='800 11px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
- let f=11;while(ctx.measureText(info.monomer).width>width-9&&f>7.4){f-=.5;ctx.font=`800 ${f}px system-ui`}
- ctx.fillText(info.monomer,cx,cy+.5);ctx.restore();
+ ctx.fillStyle='#f4ffff';ctx.textAlign='center';ctx.textBaseline='middle';
+ const text=mini?SHORT_NAMES[d.idx]||info.monomer:info.monomer;
+ let f=mini?9:Math.min(15,Math.max(12,r.w*.041));
+ ctx.font=`850 ${f}px system-ui`;
+ while(ctx.measureText(text).width>width-10&&f>(mini?7:10)){f-=.5;ctx.font=`850 ${f}px system-ui`}
+ ctx.fillText(text,cx,cy+.4);ctx.restore();
 }
 function smoothX(person,dt){
  if(person.id===myId)return displayX;
@@ -424,14 +448,23 @@ function smoothX(person,dt){
  const next=current===undefined?person.x:current+(person.x-current)*Math.min(1,dt*18);
  smoothPositions.set(person.id,next);return next;
 }
-function drawCupInLane(r,p,dt,focus,ghost=false){
- const x=r.x+smoothX(p,dt)*r.w,y=r.y+r.h*.805;
- const w=Math.max(25,Math.min(57,r.w*.19)),h=Math.max(23,Math.min(49,r.h*.17));
- ctx.save();ctx.globalAlpha=ghost?0.24:1;ctx.translate(x,y);ctx.lineWidth=focus?2.8:2;
- ctx.strokeStyle=focus?'#e0fff7':p.color;
- ctx.fillStyle='#c9f7ff15';ctx.shadowColor=p.color;ctx.shadowBlur=focus?11:3;
- ctx.beginPath();ctx.moveTo(-w/2,0);ctx.lineTo(-w*.43,h*.85);ctx.quadraticCurveTo(-w*.41,h,-w*.28,h);ctx.lineTo(w*.28,h);ctx.quadraticCurveTo(w*.41,h,w*.43,h*.85);ctx.lineTo(w/2,0);ctx.stroke();ctx.fill();
- ctx.shadowBlur=0;ctx.fillStyle=p.color+'ab';ctx.beginPath();ctx.moveTo(-w*.39,h*.52);ctx.lineTo(w*.39,h*.52);ctx.lineTo(w*.30,h*.89);ctx.lineTo(-w*.30,h*.89);ctx.closePath();ctx.fill();ctx.restore();
+function drawCupInLane(r,p,dt,focus,label=false){
+ const x=r.x+smoothX(p,dt)*r.w,y=r.y+r.h*(r.mini?.77:.81);
+ const w=r.mini?Math.max(18,Math.min(35,r.w*.24)):Math.max(33,Math.min(65,r.w*.14));
+ const h=r.mini?Math.max(17,Math.min(32,r.h*.14)):Math.max(28,Math.min(53,r.h*.115));
+ ctx.save();ctx.translate(x,y);ctx.lineWidth=focus?2.6:1.8;
+ ctx.strokeStyle=focus?'#d7fff5':p.color;ctx.fillStyle='#c9f7ff15';ctx.shadowColor=p.color;ctx.shadowBlur=focus?10:4;
+ ctx.beginPath();ctx.moveTo(-w/2,0);ctx.lineTo(-w*.43,h*.85);ctx.quadraticCurveTo(-w*.41,h,-w*.28,h);
+ ctx.lineTo(w*.28,h);ctx.quadraticCurveTo(w*.41,h,w*.43,h*.85);ctx.lineTo(w/2,0);ctx.stroke();ctx.fill();
+ ctx.shadowBlur=0;ctx.fillStyle=p.color+'b8';ctx.beginPath();ctx.moveTo(-w*.39,h*.52);ctx.lineTo(w*.39,h*.52);
+ ctx.lineTo(w*.30,h*.89);ctx.lineTo(-w*.30,h*.89);ctx.closePath();ctx.fill();
+ if(label){
+  const text=p.id===myId?'VOCÊ':p.name.slice(0,9),font=11;
+  ctx.font=`850 ${font}px system-ui`;const tw=ctx.measureText(text).width+14;
+  ctx.fillStyle='#071826dc';rr(-tw/2,-26,tw,18,7);ctx.fill();
+  ctx.fillStyle=p.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,0,-17);
+ }
+ ctx.restore();
 }
 function drawOwnSparkles(dt){
  const r=laneRect(0);
@@ -440,7 +473,7 @@ function drawOwnSparkles(dt){
   const s=sparkles[i];s.age+=dt;
   if(s.age>.6){sparkles.splice(i,1);continue}
   for(let k=0;k<9;k++){
-   const a=k*Math.PI*2/9,dist=s.age*Math.min(95,r.w*.30);
+   const a=k*Math.PI*2/9,dist=s.age*Math.min(95,r.w*.25);
    ctx.globalAlpha=1-s.age/.6;ctx.fillStyle=s.color;
    ctx.beginPath();ctx.arc(r.x+s.x*r.w+Math.cos(a)*dist,r.y+s.y*r.h+Math.sin(a)*dist,2,0,7);ctx.fill();
   }
@@ -452,23 +485,33 @@ function renderBoard(now,dt){
  ctx.fillStyle='#091d2a';ctx.fillRect(0,0,boardW,boardH);
  const people=lanePeople();
  const lag=Math.max(0,Math.min(.16,(now-worldReceivedAt)/1000));
- const common=world?.drops||[];
- for(let i=0;i<4;i++){
-  const r=laneRect(i),p=people[i];
-  drawLaneBackdrop(r,p,i,now);
-  if(p){
-   const drops=world?.mode==='arena'?common:(world?.lanes?.[p.id]||[]);
-   for(const d of drops)drawDropInLane(r,d,lag);
-   if(world?.mode==='arena')for(const other of people)if(other&&other.id!==p.id)drawCupInLane(r,other,dt,false,true);
-   drawCupInLane(r,p,dt,i===0||world?.mode==='arena');
-   if(!p.connected){
-    ctx.save();ctx.fillStyle='#0516249c';ctx.fillRect(r.x+1,r.y+35,r.w-2,r.h-36);
-    ctx.fillStyle='#ffdda0';ctx.font='800 12px system-ui';ctx.textAlign='center';ctx.fillText('RECONECTANDO',r.x+r.w/2,r.y+r.h/2);ctx.restore();
+ if(arenaMode()){
+  const r=laneRect(0);drawLaneBackdrop(r,0);
+  for(const d of world?.drops||[])drawDropInLane(r,d,lag);
+  // Cada pessoa disputa as MESMAS moléculas; não repetimos o campo quatro vezes.
+  for(const p of people)if(p)drawCupInLane(r,p,dt,p.id===myId,true);
+  ctx.save();ctx.fillStyle='#061927ce';rr(r.x+9,r.y+8,Math.min(r.w-18,238),27,8);ctx.fill();
+  ctx.fillStyle='#85f5e5';ctx.font='850 11px system-ui';ctx.textBaseline='middle';ctx.textAlign='left';
+  ctx.fillText('⚔  ARENA COMPARTILHADA',r.x+19,r.y+22);ctx.restore();
+ }else{
+  for(let i=0;i<4;i++){
+   const r=laneRect(i),p=people[i];
+   drawLaneBackdrop(r,i);
+   if(p){
+    const drops=world?.lanes?.[p.id]||[];
+    for(const d of drops)drawDropInLane(r,d,lag);
+    drawCupInLane(r,p,dt,i===0);
+    if(!p.connected){
+     ctx.save();ctx.fillStyle='#051624a5';ctx.fillRect(r.x+2,r.y+30,r.w-4,r.h-34);
+     ctx.fillStyle='#ffdda0';ctx.font=`800 ${r.mini?9:12}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';
+     ctx.fillText('RECONEXÃO',r.x+r.w/2,r.y+r.h/2);ctx.restore();
+    }
+   }else{
+    ctx.save();ctx.fillStyle='#69909b';ctx.font=`800 ${r.mini?10:13}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('Pista livre',r.x+r.w/2,r.y+r.h/2);ctx.restore();
    }
-  }else{
-   ctx.save();ctx.fillStyle='#69909b';ctx.font='800 11px system-ui';ctx.textAlign='center';ctx.fillText('Pista livre',r.x+r.w/2,r.y+r.h/2);ctx.restore();
+   drawLaneBanner(r,p,i);
   }
-  drawLaneBanner(r,p,i);
  }
  drawOwnSparkles(dt);
 }
