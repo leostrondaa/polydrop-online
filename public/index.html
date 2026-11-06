@@ -2615,7 +2615,9 @@
         const cupWidth = Math.max(33, Math.min(65, r.w * 0.14));
         const radius = Math.max(21, Math.min(31, r.w * 0.084, r.h * 0.056));
         socket.emit("game:layout", {
-          barHalfX: (cupWidth * 0.37) / r.w,
+          barHalfX: (cupWidth * 0.34) / r.w,
+          cupSideHalfX: (cupWidth * 0.465) / r.w,
+          cupSideDepth: (Math.max(28, Math.min(53, r.h * 0.115)) * 0.45) / r.h,
           dropRx: (radius + 1.3) / r.w,
           dropRy: (radius + 1.3) / r.h,
           barLineHalfY: 2.2 / r.h,
@@ -2624,7 +2626,7 @@
       function requestMove(x) {
         targetX = Math.max(0.045, Math.min(0.955, x));
         const t = performance.now();
-        if (t - lastMove > 30 && socket.connected && playing) {
+        if (t - lastMove > 14 && socket.connected && playing) {
           lastMove = t;
           socket.emit("game:move", targetX);
         }
@@ -2974,8 +2976,8 @@
         ctx.lineWidth = focus ? 4 : 2.6;
         ctx.lineCap = "round";
         ctx.beginPath();
-        ctx.moveTo(-w * 0.37, -1);
-        ctx.lineTo(w * 0.37, -1);
+        ctx.moveTo(-w * 0.34, -1);
+        ctx.lineTo(w * 0.34, -1);
         ctx.stroke();
         ctx.shadowBlur = 0;
         ctx.lineCap = "butt";
@@ -3215,7 +3217,8 @@
           if (buttons.ArrowRight || buttons.KeyD) delta += dt * 0.85;
           if (delta) requestMove(targetX + delta);
         }
-        displayX += (targetX - displayX) * Math.min(1, dt * 26);
+        // O copo local acompanha o dedo sem interpolação visual atrasada.
+        displayX = targetX;
         renderBoard(t, dt);
       }
       // O monitor decide a taxa efetiva; requestAnimationFrame permite ~60fps em telas de 60Hz.

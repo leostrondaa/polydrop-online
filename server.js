@@ -247,10 +247,13 @@ function enter(socket, r, args) {
       specialCooldownUntil: 0,
       effect: null,
       shieldUntil: 0,
-      barHalfX: 0.04,
+      barHalfX: 0.036,
       dropRx: 0.065,
       dropRy: 0.054,
       barLineHalfY: 0.005,
+      cupSideHalfX: 0.042,
+      cupSideDepth: 0.048,
+      quickMoveUntil: 0,
     };
     r.players.set(id, p);
     r.privateDrops.set(id, []);
@@ -443,20 +446,37 @@ function catchDrop(r, p, d) {
   });
   if (right && r.mode === "race") launchSpecial(r, p, Date.now());
 }
-// Colisão geométrica entre a borda horizontal iluminada do copo e a bolinha.
-// Qualquer parte do círculo tocando QUALQUER trecho da linha faz a captura.
-// Calculada no servidor com as dimensões reais da pista do próprio jogador.
-// Teste varrido: não perde colisões quando a bolinha anda muito num só tick.
+// Colisão SOMENTE pelo movimento vertical da molécula, nunca pelo trajeto lateral
+// do copo. A captura usa a posição mais recente do jogador no servidor.
+// A borda superior foi levemente encurtada. As laterais do copo também capturam
+// moléculas que já passaram da boca, até a parte superior das paredes.
 const CATCH_PLANE = 0.81;
-function crossesCup(previousY, newY, p, d) {
+function crossesCup(previousY, newY, p, d, now = Date.now()) {
   if (!p.connected || newY < previousY) return false;
+  // Mudança lateral brusca: não registrar contato artificial durante um desvio.
+  // Janela curta para não bloquear capturas normais.
+  if (now < p.quickMoveUntil) return false;
   const rx = p.dropRx,
     ry = p.dropRy + p.barLineHalfY;
-  const beyondBar = Math.max(0, Math.abs(p.x - d.x) - p.barHalfX);
-  if (beyondBar > rx) return false;
+  const dx = Math.abs(p.x - d.x);
+  const beyondBar = Math.max(0, dx - p.barHalfX);
   const closestY = clamp(CATCH_PLANE, previousY, newY);
   const gapY = Math.abs(CATCH_PLANE - closestY);
-  return (beyondBar / rx) ** 2 + (gapY / ry) ** 2 <= 1;
+  const rimHit =
+    beyondBar <= rx && (beyondBar / rx) ** 2 + (gapY / ry) ** 2 <= 1;
+  if (rimHit) return true;
+  // Laterais: segmento vertical do copo, da boca até 45% da sua altura.
+  // A molécula pode roçar a parede depois de passar pela abertura.
+  const sideX = p.cupSideHalfX;
+  const sideGap = Math.abs(dx - sideX);
+  if (sideGap > rx) return false;
+  const top = CATCH_PLANE,
+    bottom = top + p.cupSideDepth;
+  const nearestY = clamp((previousY + newY) / 2, top, bottom);
+  // Distância entre dois segmentos verticais (queda varrida e parede).
+  const verticalGap =
+    previousY > bottom ? previousY - bottom : newY < top ? top - newY : 0;
+  return (sideGap / rx) ** 2 + (verticalGap / ry) ** 2 <= 1;
 }
 function updateDrops(r, dt, now) {
   if (r.mode === "arena") {
@@ -467,7 +487,7 @@ function updateDrops(r, dt, now) {
       let winner = null,
         dist = Infinity;
       for (const p of r.players.values()) {
-        if (!crossesCup(previousY, d.y, p, d)) continue;
+        if (!crossesCup(previousY, d.y, p, d, now)) continue;
         const gap = Math.abs(p.x - d.x);
         if (gap < dist) {
           winner = p;
@@ -493,7 +513,7 @@ function updateDrops(r, dt, now) {
         const d = drops[i],
           previousY = d.y;
         d.y += d.vy * dt * speed;
-        if (crossesCup(previousY, d.y, p, d)) {
+        if (crossesCup(previousY, d.y, p, d, now)) {
           catchDrop(r, p, d);
           drops.splice(i, 1);
         } else if (d.y > 1.08) drops.splice(i, 1);
@@ -519,6 +539,7 @@ function startMatch(r) {
     p.specialCooldownUntil = now + FIRST_SPECIAL_DELAY;
     p.effect = null;
     p.shieldUntil = 0;
+    p.quickMoveUntil = 0;
     p.learned.clear();
     r.privateDrops.set(p.id, []);
   }
@@ -719,9 +740,18 @@ io.on("connection", (socket) => {
     const r = rooms.get(socket.data.code),
       p = r?.players.get(socket.data.playerId);
     if (!p || p.socketId !== socket.id || !g || typeof g !== "object") return;
-    const keys = ["barHalfX", "dropRx", "dropRy", "barLineHalfY"];
+    const keys = [
+      "barHalfX",
+      "dropRx",
+      "dropRy",
+      "barLineHalfY",
+      "cupSideHalfX",
+      "cupSideDepth",
+    ];
     if (!keys.every((k) => Number.isFinite(g[k]))) return;
     p.barHalfX = clamp(g.barHalfX, 0.008, 0.075);
+    p.cupSideHalfX = clamp(g.cupSideHalfX, 0.012, 0.09);
+    p.cupSideDepth = clamp(g.cupSideDepth, 0.008, 0.09);
     p.dropRx = clamp(g.dropRx, 0.014, 0.105);
     p.dropRy = clamp(g.dropRy, 0.014, 0.115);
     p.barLineHalfY = clamp(g.barLineHalfY, 0.001, 0.02);
@@ -732,9 +762,16 @@ io.on("connection", (socket) => {
     const p = r.players.get(socket.data.playerId);
     if (!p || p.socketId !== socket.id || !Number.isFinite(x)) return;
     const now = Date.now();
-    if (now - p.moveAt < 19) return;
+    const next = clamp(x, 0.045, 0.955),
+      elapsed = Math.max(1, now - p.moveAt);
+    const distance = Math.abs(next - p.x);
+    // Processar movimentos mais frequentemente, sem deixar a hitbox atrasar.
+    if (now - p.moveAt < 10) return;
+    // Um salto lateral rápido não pode "varrer" moléculas pelo caminho.
+    if (distance > 0.065 && distance / (elapsed / 1000) > 1.15)
+      p.quickMoveUntil = now + 48;
     p.moveAt = now;
-    p.x = clamp(x, 0.045, 0.955);
+    p.x = next;
   });
   socket.on("disconnect", () => detach(socket, false));
 });
