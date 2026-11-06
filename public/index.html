@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#071523">
-<title>PolyDrop • Missões por fase v9</title>
+<meta name="theme-color" content="#080808">
+<title>PolyDrop — Jogue química</title>
 <style>
 :root{color-scheme:dark;--bg:#071523;--text:#edf9ff;--muted:#9bb7c6;--mint:#5eead4;--aqua:#38bdf8;--line:#3c6572;--glass:#112b3bcf;--pink:#fb7185;--gold:#fbbf24}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}body{overflow-x:hidden}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.46}button:focus-visible,input:focus-visible{outline:3px solid #81e5f3;outline-offset:3px}button:active:not(:disabled){transform:translateY(1px)}
@@ -79,20 +79,132 @@ body.poly-controls{touch-action:none;overscroll-behavior:none}
 .mission-ready{font-size:11px;text-align:center;color:#aac7d0;margin-top:11px}
 @media(max-width:600px){.mission-overlay{padding:10px}.mission-card{padding:18px;border-radius:18px}.mission-kicker{margin-top:14px}.mission-roles{margin-top:11px}.mission-role{padding:6px 9px}.mission-steps{margin-top:12px}}
 @media(prefers-reduced-motion:reduce){.mission-card,.mission-steps i{transition:none}}
+
+/* V14: identidade sólida preto/amarelo, com poucos elementos na interface. */
+:root{--bg:#080808;--text:#F4F4F4;--muted:#A2A2A2;--mint:#F5CF20;--aqua:#F5CF20;--line:#393939;--glass:#151515;--pink:#F5CF20;--gold:#F5CF20}
+*,*::before,*::after{background-image:none!important;mask-image:none!important;box-shadow:none!important;text-shadow:none!important;backdrop-filter:none!important}
+html,body{background:#080808;color:#F4F4F4;font-family:Arial,Helvetica,system-ui,sans-serif}
+.background,.feature-row,.decor,.footer{display:none!important}
+button:focus-visible,input:focus-visible{outline:2px solid #F5CF20;outline-offset:2px}
+.topbar{width:min(1120px,calc(100% - 40px));padding:18px 0;border-bottom:1px solid #282828}
+.brand{font-size:20px;letter-spacing:-.6px;color:#FAFAFA;font-weight:900}
+.brand strong,.hero-title span{color:#F5CF20!important;-webkit-text-fill-color:#F5CF20!important}
+.brand-icon{width:32px;height:32px;border-radius:6px;background:#F5CF20;border:0;color:#080808;font:bold 20px/1 Arial,sans-serif}
+.status{border:1px solid #333;background:#111;border-radius:6px;color:#A8A8A8;font-size:11px;padding:7px 9px}
+.status i,.status.online i,.status.offline i{background:#F5CF20}
+.container{width:min(1080px,calc(100% - 40px))}
+.home{grid-template-columns:minmax(0,1fr) minmax(330px,420px);gap:68px;padding:44px 0;min-height:calc(100dvh - 100px);align-items:center}
+.home-intro{min-width:0}
+.hero-title{font-size:clamp(64px,7.7vw,110px);font-weight:950;letter-spacing:-6px;line-height:.93;margin:0 0 20px;overflow-wrap:anywhere}
+.hero-desc{font-size:16px;line-height:1.45;color:#A9A9A9;max-width:320px;margin:0}
+.panel{background:#151515;border:1px solid #333;border-radius:12px;padding:28px}
+.home-panel{width:100%}
+.small-label{color:#D7D7D7;margin:0 0 9px;font-size:11px;letter-spacing:.9px}
+.home-panel .small-label:not(:first-child){margin-top:22px}
+.input{background:#0A0A0A;color:#F6F6F6;border:1px solid #434343;border-radius:7px;padding:14px 13px;font-size:14px}
+.input::placeholder{color:#858585}.input:focus{border-color:#F5CF20}
+.mode-grid{gap:8px}
+.mode{background:#0A0A0A;border:1px solid #4B4B4B;color:#F4F4F4;border-radius:7px;min-height:53px;text-align:center;padding:12px 7px}
+.mode.selected{background:#F5CF20;color:#080808;border:1px solid #F5CF20;padding:12px 7px}
+.mode b{font-size:13px;font-weight:850}
+.primary{background:#F5CF20;color:#090909;border:1px solid #F5CF20;border-radius:7px;font-size:14px;font-weight:900;padding:15px 14px}
+.primary:hover:enabled{background:#FFE45D}
+.secondary{background:#171717;border:1px solid #4C4C4C;color:#EFEFEF;border-radius:7px;font-weight:750}
+.secondary:hover{background:#242424;border-color:#F5CF20}
+.home-start{margin-top:25px}
+.divider-text{color:#999;font-size:10px;letter-spacing:.7px;margin:23px 0 12px}
+.divider-text::before,.divider-text::after{background:#333}
+.join .input{letter-spacing:1.4px}
+.error{color:#F5CF20}
+.lobby,.results{padding-top:38px}
+.lobby-head h1,.results h1{font-size:clamp(30px,5vw,48px);letter-spacing:-1.5px;margin:0 0 8px}
+.lobby-head p,.muted,.helper{color:#A3A3A3}
+.section-title{color:#F3F3F3;letter-spacing:-.2px}
+.badge{background:#F5CF20;color:#0C0C0C;border-radius:5px;font-weight:900}
+.room-code{background:#0D0D0D;border:1px solid #464646;border-radius:8px}
+.room-code .mini{color:#B1B1B1}
+.code-big{color:#F5CF20;font-size:clamp(38px,7vw,58px)}
+.qr-shell img{border-radius:5px;background:#FFF;padding:8px}
+.person,.placeholder,.host-help{background:#101010;border:1px solid #333;border-radius:7px}
+.person-label,.placeholder,.host-help{color:#AAAAAA}
+.avatar{background:#252525!important;color:#F5CF20!important;border:1px solid #4B4B4B;border-radius:5px}
+.game-hud,.hintbar,.scoreboard{background:#131313;border:1px solid #343434;border-radius:8px}
+.game-target .small,.game-timer div{color:#AEAEAE}
+.game-target .mono{color:#F5CF20}
+.game-timer b,.score-mini,.hintbar strong{color:#F5CF20}
+.progress-cell{background:#393939;border-radius:2px}
+.progress-cell.current,.progress-cell.complete{background:#F5CF20}
+.board,.four-lanes{background:#080808;border:1px solid #383838;border-radius:8px}
+.board-label{color:#A5A5A5}
+.hintbar{border-radius:6px}
+.scoreboard h3{color:#F5CF20}
+.rank{background:#191919;border-radius:5px}
+.rank.me{background:#252111;border:1px solid #F5CF20}
+.rank .num{color:#929292}.rank .points{color:#F5CF20}
+.scoreboard .info{display:none}
+.special-status{color:#CCC}
+.special-bars span{background:#3A3A3A}
+.special-bars span.full,.special-bars span.pending,.special-bars span.cooling{background:#F5CF20}
+.attack-banner{background:#F5CF20;color:#0A0A0A;border:1px solid #F5CF20;border-radius:6px}
+.discovery{background:#151515;border:1px solid #F5CF20;border-radius:7px}
+.discovery .hint,.discovery .equation{color:#F5CF20}
+.discovery h4,.discovery p{color:#EEE}
+.discovery button{background:#282828;color:#F5CF20;border-radius:5px}
+.reconnect-notice{background:#F5CF20;color:#090909;border:1px solid #F5CF20;border-radius:6px}
+.podium-person,.podium-person.first{background:#151515;border:1px solid #444;border-radius:8px}
+.podium-person.first{border-color:#F5CF20}
+.podium-person .pts,.result-row b{color:#F5CF20}
+.result-row{border-bottom:1px solid #343434}
+.mission-overlay{background:#080808}
+.mission-card{background:#131313;border:1px solid #F5CF20;border-radius:11px;max-width:570px;padding:clamp(20px,4vw,32px)}
+.mission-head{color:#BDBDBD}
+.mission-seconds,.mission-kicker{color:#F5CF20}
+.mission-title{color:#FFF}
+.mission-explain,.mission-fact{color:#C2C2C2}
+.mission-target{background:#F5CF20;border:1px solid #F5CF20;border-radius:7px;padding:18px}
+.mission-target span,.mission-target strong{color:#080808!important}
+.mission-roles{border-top:1px solid #3D3D3D}
+.mission-roles-title{color:#F5CF20}
+.mission-role{background:#0C0C0C;border:1px solid #333;border-radius:6px;color:#EEE}
+.mission-role.mine{background:#26210B;border-color:#F5CF20}
+.mission-steps i{background:#383838;border-radius:2px}
+.mission-steps i.active{background:#F5CF20}
+@media(max-width:800px){.home{grid-template-columns:1fr;gap:27px;min-height:unset;padding-top:42px;max-width:540px}.hero-title{font-size:clamp(62px,12vw,86px);letter-spacing:-4px}.hero-desc{max-width:none}.lobby-layout{grid-template-columns:1fr}}
+@media(max-width:620px){.home{margin:0 auto}.topbar{width:calc(100% - 28px);padding:12px 0}.container{width:calc(100% - 28px)}.home{gap:24px;padding:43px 0 24px}.hero-title{font-size:clamp(60px,14vw,78px);letter-spacing:-4px;margin-bottom:12px}.hero-desc{font-size:14px}.panel,.home .panel{padding:20px;border-radius:9px}.mode{min-height:50px}.mode b{font-size:12px}.game-hud{border-radius:7px}.game-shell{padding:0 7px 7px}.board{border-radius:7px}.lobby{padding-top:24px}.lobby-head{margin-bottom:16px}.mission-card{border-radius:9px}.game-target .mono{font-size:11px}}
 </style>
 </head>
 <body>
-<div class="background" aria-hidden="true"><div class="atom a1"></div><div class="atom a2"></div></div>
 <div id="app">
-  <header class="topbar"><div class="brand"><div class="brand-icon">⚗️</div><div>Poly<strong>Drop</strong></div></div><div style="display:flex;align-items:center;gap:8px"><button id="leaveGame" class="secondary hide" style="padding:8px 11px;font-size:12px">Sair</button><div id="connection" class="status"><i></i><span>Conectando...</span></div></div></header>
+  <header class="topbar"><div class="brand"><div class="brand-icon" aria-hidden="true">P</div><div>Poly<strong>Drop</strong></div></div><div style="display:flex;align-items:center;gap:8px"><button id="leaveGame" class="secondary hide" style="padding:8px 11px;font-size:12px">Sair</button><div id="connection" class="status"><i></i><span>Conectando...</span></div></div></header>
   <section id="homeScreen" class="screen active container home">
-    <div><div class="eyebrow">⚗️ Laboratório multiplayer</div><h1 class="hero-title">Química virou<br><span>jogo.</span></h1><p class="hero-desc">Pegue o monômero certo. Vença a turma.</p><div class="feature-row"><span class="feature">⚡ 5 fases</span><span class="feature">🎮 Até 4 jogadores</span></div><div class="decor" aria-hidden="true"><i class="bond b1"></i><i class="bond b2"></i><div class="mol one">Eteno</div><div class="mol two">PVC</div><div class="mol three">Estireno</div></div></div>
-    <div class="panel"><h2>Vamos jogar?</h2><p>Escolha o modo e crie uma sala.</p><label class="small-label" for="name">Seu apelido</label><input class="input" id="name" maxlength="18" placeholder="Ex.: Marie Curie" autocomplete="nickname"><label class="small-label">Modo de jogo</label><div class="mode-grid"><button class="mode selected" data-mode="race"><span class="mode-icon">🏁</span><b>Corrida individual</b><small>Seu béquer, seus pontos.</small></button><button class="mode" data-mode="arena"><span class="mode-icon">⚔️</span><b>Laboratório compartilhado</b><small>Todos disputam as moléculas.</small></button></div><button id="createRoom" class="primary" style="margin-top:17px">CRIAR SALA →</button><div class="divider-text">TEM UM CÓDIGO?</div><div class="join"><input id="joinCode" class="input" maxlength="5" placeholder="CÓDIGO" aria-label="Código de cinco caracteres"><button id="joinRoom" class="secondary">Entrar</button></div><div id="homeError" class="error" role="alert"></div></div>
+    <div class="home-intro">
+      <h1 class="hero-title">Poly<span>Drop.</span></h1>
+      <p class="hero-desc">Pegue o monômero certo. Desvie dos outros.</p>
+    </div>
+    <div class="panel home-panel">
+      <label class="small-label" for="name">SEU NOME</label>
+      <input class="input" id="name" maxlength="18" placeholder="Digite seu nome" autocomplete="nickname">
+      <label class="small-label" id="modeLabel">MODO DE JOGO</label>
+      <div class="mode-grid" role="group" aria-labelledby="modeLabel">
+        <button class="mode selected" data-mode="race" type="button"><b>Individual</b></button>
+        <button class="mode" data-mode="arena" type="button"><b>Compartilhado</b></button>
+      </div>
+      <button id="createRoom" class="primary home-start">Criar sala</button>
+      <div class="divider-text">OU ENTRE COM UM CÓDIGO</div>
+      <div class="join"><input id="joinCode" class="input" maxlength="5" placeholder="Código" aria-label="Código da sala"><button id="joinRoom" class="secondary">Entrar</button></div>
+      <div id="homeError" class="error" role="alert"></div>
+    </div>
   </section>
-  <section id="lobbyScreen" class="screen container lobby"><div class="lobby-head"><div><div class="eyebrow">Sala de espera</div><h1>Todo mundo pronto?</h1><p id="lobbyMode">Modo: Corrida individual</p></div><button id="leaveLobby" class="secondary">← Sair</button></div><div class="lobby-layout"><div class="panel"><h3 class="section-title">Jogadores na sala <span id="playerCount" class="badge">0 / 4</span></h3><div id="playerList" class="roster"></div><div id="hostHelp" class="host-help">Chame a turma pelo QR Code.</div><button id="startMatch" class="primary" style="margin-top:16px">COMEÇAR PARTIDA →</button></div><div class="panel"><h3 class="section-title">Convite <span class="badge">ONLINE</span></h3><div class="room-code"><div class="mini">CÓDIGO DA SALA</div><div id="roomCode" class="code-big">-----</div></div><div class="qr-shell"><img id="qr" alt="QR Code para entrar nesta sala" width="158" height="158"></div><div class="helper">Escaneie para entrar.</div><div class="action-row"><button id="copyLink" class="secondary">🔗 Copiar link</button><button id="shareLink" class="secondary">↗ Compartilhar</button></div></div></div></section>
-  <section id="gameShell" class="game-shell"><main class="game-main"><div class="game-hud"><div class="game-target"><div id="stageLabel" class="small">FASE 1 / 5</div><h2 id="targetPolymer">Produza PVC</h2><div id="targetMonomer" class="mono">Pegue: Cloreto de vinila</div><div id="specialStatus" class="special-status"><span>⚡ ESPECIAL</span><div id="specialBars" class="special-bars"><span></span><span></span><span></span><span></span><span></span></div><span id="specialText">0/5 acertos</span></div></div><div class="game-timer"><b id="timeLeft">22s</b><div>RESTANTE</div></div></div><div id="stageProgress" class="progress-row"><span class="progress-cell current"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span></div><div id="board" class="board four-lanes race-view"><canvas id="canvas" aria-label="Campo do jogo, mova o béquer para capturar monômeros"></canvas><div class="board-label">Arraste o béquer • sua pista em destaque</div><div id="countdown" class="float hidden">3</div><div id="attackBanner" class="attack-banner" role="status" aria-live="polite"></div><div id="reconnectNotice" class="reconnect-notice hidden">📡 Reconectando...</div><div id="discovery" class="discovery" role="status"><div class="hint">🧪 VOCÊ DESCOBRIU!</div><h4 id="discoveryTitle">Eteno → Polietileno</h4><p id="discoveryFact"></p><p id="discoveryUse"></p><button id="closeDiscovery" title="Fechar">×</button></div></div><div class="hintbar"><span>🧪 <strong id="modeTag">Corrida individual</strong> <span id="mobileRank">• Rank #1</span></span><span id="selfScore" class="score-mini">★ 0 pontos</span></div></main><aside class="scoreboard"><h3>🏆 Placar ao vivo</h3><div class="entries" id="leaderboard"></div><div class="info">✅ +10 certo<br>⚡ +5 combo<br>❌ −5 errado</div></aside></section>
-  <section id="endScreen" class="screen container results"><div class="eyebrow">Experimento concluído</div><h1>🏆 Pódio do laboratório</h1><p class="muted">Veja quem dominou o laboratório.</p><div id="podium" class="podium"></div><div class="panel list"><h3 class="section-title">Classificação completa <span class="badge">RESULTADO FINAL</span></h3><div id="finalRanking"></div></div><div class="end-actions"><button id="playAgain" class="primary">↻ NOVA PARTIDA</button><button id="leaveEnd" class="secondary">Sair da sala</button></div><div id="endHint" class="helper" style="text-align:left"></div></section>
-  <div class="footer">PolyDrop • Química em jogo</div>
+  <section id="lobbyScreen" class="screen container lobby">
+    <div class="lobby-head"><div><h1>Sala de espera</h1><p id="lobbyMode">Individual</p></div><button id="leaveLobby" class="secondary">Sair</button></div>
+    <div class="lobby-layout">
+      <div class="panel"><h3 class="section-title">Jogadores <span id="playerCount" class="badge">0 / 4</span></h3><div id="playerList" class="roster"></div><div id="hostHelp" class="host-help">Compartilhe o código com os outros.</div><button id="startMatch" class="primary" style="margin-top:16px">Começar partida</button></div>
+      <div class="panel invite-panel"><h3 class="section-title">Convidar</h3><div class="room-code"><div class="mini">CÓDIGO DA SALA</div><div id="roomCode" class="code-big">-----</div></div><div class="qr-shell"><img id="qr" alt="QR Code da sala" width="158" height="158"></div><div class="action-row"><button id="copyLink" class="secondary">Copiar link</button><button id="shareLink" class="secondary">Compartilhar</button></div></div>
+    </div>
+  </section>
+  <section id="gameShell" class="game-shell"><main class="game-main"><div class="game-hud"><div class="game-target"><div id="stageLabel" class="small">FASE 1 / 5</div><h2 id="targetPolymer">Produza PVC</h2><div id="targetMonomer" class="mono">Pegue: Cloreto de vinila</div><div id="specialStatus" class="special-status"><span>⚡ ESPECIAL</span><div id="specialBars" class="special-bars"><span></span><span></span><span></span><span></span><span></span></div><span id="specialText">0/5 acertos</span></div></div><div class="game-timer"><b id="timeLeft">22s</b><div>RESTANTE</div></div></div><div id="stageProgress" class="progress-row"><span class="progress-cell current"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span></div><div id="board" class="board four-lanes race-view"><canvas id="canvas" aria-label="Campo do jogo, mova o béquer para capturar monômeros"></canvas><div class="board-label">Arraste para mover</div><div id="countdown" class="float hidden">3</div><div id="attackBanner" class="attack-banner" role="status" aria-live="polite"></div><div id="reconnectNotice" class="reconnect-notice hidden">📡 Reconectando...</div><div id="discovery" class="discovery" role="status"><div class="hint">DESCOBERTA</div><h4 id="discoveryTitle">Eteno → Polietileno</h4><p id="discoveryFact"></p><p id="discoveryUse"></p><button id="closeDiscovery" title="Fechar">×</button></div></div><div class="hintbar"><span><strong id="modeTag">Corrida individual</strong> <span id="mobileRank">• Rank #1</span></span><span id="selfScore" class="score-mini">★ 0 pontos</span></div></main><aside class="scoreboard"><h3>Placar</h3><div class="entries" id="leaderboard"></div></aside></section>
+  <section id="endScreen" class="screen container results"><h1>Resultado</h1><div id="podium" class="podium"></div><div class="panel list"><h3 class="section-title">Classificação</h3><div id="finalRanking"></div></div><div class="end-actions"><button id="playAgain" class="primary">Jogar de novo</button><button id="leaveEnd" class="secondary">Sair da sala</button></div><div id="endHint" class="helper" style="text-align:left"></div></section>
+  
   <div id="missionOverlay" class="mission-overlay hidden" role="dialog" aria-modal="true" aria-label="Missão da fase" aria-live="polite">
    <div class="mission-card">
     <div class="mission-head"><span id="missionPhase">FASE 1 DE 5</span><span class="mission-seconds" id="missionSeconds">6s</span></div>
@@ -101,21 +213,22 @@ body.poly-controls{touch-action:none;overscroll-behavior:none}
     <p class="mission-explain" id="missionExplain">Sua tarefa nesta rodada:</p>
     <div class="mission-target" id="missionTarget"><span>PEGUE SOMENTE</span><strong id="missionMonomer">Cloreto de vinila</strong></div>
     <div class="mission-fact" id="missionFact">Muitas moléculas podem formar uma cadeia longa.</div>
-    <div class="mission-roles hidden" id="missionRoles"><div class="mission-roles-title">⚗️ Responsabilidades da equipe</div><div id="missionRolesList"></div></div>
+    <div class="mission-roles hidden" id="missionRoles"><div class="mission-roles-title">Cada jogador pega seu monômero</div><div id="missionRolesList"></div></div>
     <div class="mission-steps" id="missionSteps"><i></i><i></i><i></i></div>
-    <div class="mission-ready">A fase começa automaticamente. Prepare seu béquer!</div>
+    
    </div>
   </div>
 </div>
 <script src="/socket.io/socket.io.js"></script>
+<script src="/collision.js"></script>
 <script>
 'use strict';
 const DATA=[
- {polymer:'PVC',monomer:'Cloreto de vinila',color:'#34d399',formula:'n CH₂=CHCl → [–CH₂–CHCl–]ₙ',fact:'Muitos monômeros se unem e formam uma cadeia de PVC.',use:'Exemplos: canos e fios.'},
- {polymer:'Polietileno',monomer:'Eteno',color:'#60a5fa',formula:'n CH₂=CH₂ → [–CH₂–CH₂–]ₙ',fact:'Vários etenos ligados formam o polietileno.',use:'Exemplos: sacolas e frascos.'},
- {polymer:'Poliestireno',monomer:'Estireno',color:'#fbbf24',formula:'n CH₂=CH–C₆H₅ → [–CH₂–CH(C₆H₅)–]ₙ',fact:'Estirenos se unem em longas cadeias de poliestireno.',use:'Exemplos: copos e isopor.'},
- {polymer:'PTFE (Teflon)',monomer:'Tetrafluoroetileno',color:'#a78bfa',formula:'n CF₂=CF₂ → [–CF₂–CF₂–]ₙ',fact:'A união de tetrafluoroetilenos forma PTFE.',use:'Exemplo: revestimentos de baixo atrito.'},
- {polymer:'Polipropileno',monomer:'Propeno',color:'#f472b6',formula:'n CH₂=CH–CH₃ → [–CH₂–CH(CH₃)–]ₙ',fact:'Propenos ligados em cadeia formam polipropileno.',use:'Exemplos: potes e tampas.'}
+ {polymer:'PVC',monomer:'Cloreto de vinila',color:'#F5CF20',formula:'n CH₂=CHCl → [–CH₂–CHCl–]ₙ',fact:'Muitos monômeros se unem e formam uma cadeia de PVC.',use:'Exemplos: canos e fios.'},
+ {polymer:'Polietileno',monomer:'Eteno',color:'#F5CF20',formula:'n CH₂=CH₂ → [–CH₂–CH₂–]ₙ',fact:'Vários etenos ligados formam o polietileno.',use:'Exemplos: sacolas e frascos.'},
+ {polymer:'Poliestireno',monomer:'Estireno',color:'#F5CF20',formula:'n CH₂=CH–C₆H₅ → [–CH₂–CH(C₆H₅)–]ₙ',fact:'Estirenos se unem em longas cadeias de poliestireno.',use:'Exemplos: copos e isopor.'},
+ {polymer:'PTFE (Teflon)',monomer:'Tetrafluoroetileno',color:'#F5CF20',formula:'n CF₂=CF₂ → [–CF₂–CF₂–]ₙ',fact:'A união de tetrafluoroetilenos forma PTFE.',use:'Exemplo: revestimentos de baixo atrito.'},
+ {polymer:'Polipropileno',monomer:'Propeno',color:'#F5CF20',formula:'n CH₂=CH–CH₃ → [–CH₂–CH(CH₃)–]ₙ',fact:'Propenos ligados em cadeia formam polipropileno.',use:'Exemplos: potes e tampas.'}
 ];
 const $=id=>document.getElementById(id);
 // Polling como fallback: redes de celular e proxies podem interromper WebSockets.
@@ -148,6 +261,7 @@ function vibrate(kind){
  try{navigator.vibrate(patterns[kind]||[28])}catch{}
 }
 const smoothPositions=new Map();
+const pendingOwnContacts=new Set();
 let missionKey='', missionTimer=null, missionUntil=0, missionCurrentSlide=-1, countdownKey='';
 const SESSION='polydrop-player-v2', ROOM_KEY='polydrop-room-v2';
 function uniqueToken(){
@@ -236,7 +350,7 @@ $('shareLink').onclick=async()=>{
 function leave(){
  hideMission();missionKey='';countdownKey='';
  attackAnimations.clear();$('attackBanner').classList.remove('show');
- socket.emit('room:leave');room=null;myId=null;world=null;smoothPositions.clear();playing=false;lastStage=-1;lastQR='';lastStartedRound=-1;finishedRound=-1;
+ socket.emit('room:leave');pendingOwnContacts.clear();caughtIds.clear();room=null;myId=null;world=null;smoothPositions.clear();playing=false;lastStage=-1;lastQR='';lastStartedRound=-1;finishedRound=-1;
  clearRoom();clearInterval(countTick);history.replaceState(null,'',location.pathname);showScreen('home');
 }
 $('leaveLobby').onclick=leave;$('leaveEnd').onclick=leave;$('leaveGame').onclick=leave;
@@ -271,6 +385,7 @@ function sound(good){
  }catch{}
 }
 function hitEffect(d){
+ if(Number.isInteger(d.id))pendingOwnContacts.delete(d.id);
  if(room?.roundId && d.roundId && room.roundId!==d.roundId)return;
  const own=!d.playerId||d.playerId===myId;
  if(own){
@@ -281,9 +396,9 @@ function hitEffect(d){
  // Todas as telas mostram o acerto na pista exata; só a pessoa escuta o som.
  if(Number.isInteger(d.id))caughtIds.set(d.id,performance.now()+1100);
  const fx={playerId:d.playerId||myId,x:d.x,y:Number.isFinite(d.y)?d.y:.81,
-  age:0,ok:!!d.ok,label:(Number.isFinite(d.points)?d.points:(d.ok?(d.bonus?15:10):-5))>0?'+'+(Number.isFinite(d.points)?d.points:(d.bonus?15:10)):String(Number.isFinite(d.points)?d.points:-5),color:d.color||'#5eead4'};
+  age:0,ok:!!d.ok,label:(Number.isFinite(d.points)?d.points:(d.ok?(d.bonus?15:10):-5))>0?'+'+(Number.isFinite(d.points)?d.points:(d.bonus?15:10)):String(Number.isFinite(d.points)?d.points:-5),color:d.color||'#F5CF20'};
  captureEffects.push(fx);
- sparkles.push({...fx,color:d.ok?'#5ef2b3':'#fb7185'});
+ sparkles.push({...fx,color:d.ok?'#5ef2b3':'#F5CF20'});
  if(own && world){
   const p=world.players.find(x=>x.id===myId);
   if(p){p.chain=d.chain||0;p.pendingSpecial=!!d.pendingSpecial;updateSpecialStatus(p)}
@@ -334,7 +449,7 @@ function updateBoardInfo(){
  $('selfScore').textContent=`★ ${p?.score||0} pts`;$('mobileRank').textContent=rank?'• #'+rank:'';
  updateSpecialStatus(p);
  $('timeLeft').textContent=Math.ceil(world.remaining/1000)+'s';
- $('timeLeft').style.color=world.remaining<6000?'#fb7185':'#f4fbff';
+ $('timeLeft').style.color=world.remaining<6000?'#F5CF20':'#f4fbff';
  $('modeTag').textContent=world.mode==='arena'?'Arena':'Corrida';
  $('leaderboard').replaceChildren();
  for(let i=0;i<world.players.length;i++){
@@ -378,7 +493,7 @@ function showMission(snapshot){
  if(lastStartedRound!==snapshot.roundId){
   lastStartedRound=snapshot.roundId;finishedRound=-1;
   world=null;smoothPositions.clear();targetX=.5;displayX=.5;
-  lastStage=-1;sparkles.length=0;captureEffects.length=0;caughtIds.clear();
+  lastStage=-1;sparkles.length=0;captureEffects.length=0;caughtIds.clear();pendingOwnContacts.clear();
   attackAnimations.clear();$('attackBanner').classList.remove('show');
  }
  showScreen('game');playing=false;
@@ -387,7 +502,7 @@ function showMission(snapshot){
   missionKey=key;missionCurrentSlide=-1;
   const d=DATA[myAssignment(snapshot.stage)]||DATA[snapshot.stage];
   $('missionPhase').textContent=`FASE ${snapshot.stage+1} DE 5`;
-  $('missionTitle').textContent=snapshot.mode==='arena'?'Missão distribuída!':'Produza '+d.polymer;
+  $('missionTitle').textContent=snapshot.mode==='arena'?'Sua missão':'Produza '+d.polymer;
   $('missionMonomer').textContent=d.monomer;
   $('missionTarget').style.setProperty('--mission-color',d.color);
   $('missionFact').textContent='💡 '+d.fact;
@@ -401,7 +516,7 @@ function showMission(snapshot){
     const target=document.createElement('span');
     const task=DATA[p.targetIdx];
     target.textContent=task?.monomer||'Sem missão';
-    target.style.color=task?.color||'#e6ffff';
+    target.style.color='#F5CF20';
     row.append(name,target);$('missionRolesList').append(row);
    });
   }
@@ -413,6 +528,7 @@ function showMission(snapshot){
  if(!missionTimer)missionTimer=setInterval(refreshMission,120);
 }
 function startCountdown(snapshot){
+ pendingOwnContacts.clear();
  const key=snapshot.roundId+':'+snapshot.stage;
  if(countdownKey===key)return;
  countdownKey=key;
@@ -543,21 +659,12 @@ function sizeCanvas(){
 }
 addEventListener('resize',()=>{if(uiState==='game')sizeCanvas()});
  // Geometria visível: a linha azul é literalmente a superfície de captura.
-// O servidor aplica a colisão círculo × segmento varrida (sem hitbox invisível).
+// Cliente e servidor validam as mesmas linhas físicas do copo.
 function sendCupGeometry(){
  if(!room||!socket.connected)return;
  const r=laneRect(0);
- if(r.w<=0||r.h<=0)return;
- const cupWidth=Math.max(33,Math.min(65,r.w*.14));
- const radius=Math.max(21,Math.min(31,r.w*.084,r.h*.056));
- socket.emit('game:layout',{
-  barHalfX:(cupWidth*.34)/r.w,
-  cupSideHalfX:(cupWidth*.465)/r.w,
-  cupSideDepth:(Math.max(28,Math.min(53,r.h*.115))*.45)/r.h,
-  dropRx:(radius+1.3)/r.w,
-  dropRy:(radius+1.3)/r.h,
-  barLineHalfY:2.2/r.h
- });
+ const geo=PolyDropCollision.geometryForLane(r.w,r.h);
+ if(geo)socket.emit('game:layout',geo);
 }
 function requestMove(x){
  targetX=Math.max(.045,Math.min(.955,x));
@@ -586,7 +693,7 @@ function lanePeople(){
  const all=world?.players||room?.players||[];
  const mine=all.find(p=>p.id===myId);
  const others=all.filter(p=>p.id!==myId).sort((a,b)=>a.id.localeCompare(b.id));
- return [mine||{id:myId||'self',name:'Você',x:displayX,score:0,color:'#5eead4',connected:true},...others].slice(0,4);
+ return [mine||{id:myId||'self',name:'Você',x:displayX,score:0,color:'#F5CF20',connected:true},...others].slice(0,4);
 }
 function localTouch(event){
  const rect=$('board').getBoundingClientRect(),r=laneRect(0);
@@ -633,30 +740,28 @@ addEventListener('keyup',e=>{buttons[e.code]=false});
 function rr(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
 function drawLaneBackdrop(r,slot){
  ctx.save();rr(r.x,r.y,r.w,r.h,r.mini?9:13);ctx.clip();
- const grad=ctx.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);
- grad.addColorStop(0,slot===0?'#113b46':'#142f42');grad.addColorStop(1,'#071b2b');
- ctx.fillStyle=grad;ctx.fillRect(r.x,r.y,r.w,r.h);
- ctx.strokeStyle='#87d9ca0b';ctx.lineWidth=1;
+ ctx.fillStyle=slot===0?'#121212':'#101010';ctx.fillRect(r.x,r.y,r.w,r.h);
+ ctx.strokeStyle='#242424';ctx.lineWidth=1;
  const grid=r.mini?25:36;
  for(let x=grid;x<r.w;x+=grid){ctx.beginPath();ctx.moveTo(r.x+x,r.y);ctx.lineTo(r.x+x,r.y+r.h);ctx.stroke()}
  for(let y=grid;y<r.h;y+=grid){ctx.beginPath();ctx.moveTo(r.x,r.y+y);ctx.lineTo(r.x+r.w,r.y+y);ctx.stroke()}
  const ground=r.mini?10:17;
- ctx.fillStyle='#23465588';ctx.fillRect(r.x,r.y+r.h-ground,r.w,ground);
+ ctx.fillStyle='#25252588';ctx.fillRect(r.x,r.y+r.h-ground,r.w,ground);
  ctx.restore();
  ctx.save();rr(r.x+1,r.y+1,r.w-2,r.h-2,r.mini?9:13);
- ctx.strokeStyle=slot===0?'#5eead4':'#3f687b';ctx.lineWidth=slot===0?2.8:1.3;ctx.stroke();ctx.restore();
+ ctx.strokeStyle=slot===0?'#F5CF20':'#484848';ctx.lineWidth=slot===0?2.8:1.3;ctx.stroke();ctx.restore();
 }
 function drawLaneBanner(r,person,slot){
  const mini=!!r.mini,pad=mini?4:8,bh=mini?21:29;
- ctx.save();ctx.fillStyle='#061927eb';rr(r.x+pad,r.y+pad,r.w-2*pad,bh,mini?5:8);ctx.fill();
+ ctx.save();ctx.fillStyle='#101010eb';rr(r.x+pad,r.y+pad,r.w-2*pad,bh,mini?5:8);ctx.fill();
  const name=person?(slot===0?'VOCÊ':person.name):'LIVRE';
  const points=person?`${person.score||0}`:'';
- ctx.fillStyle=slot===0?'#8bfce5':person?.color||'#8aa5b4';
+ ctx.fillStyle=slot===0?'#F5CF20':person?.color||'#A8A8A8';
  ctx.font=`850 ${mini?9:13}px system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';
  const available=Math.max(19,r.w-(mini?36:78));let display=name;
  while(ctx.measureText(display).width>available&&display.length>2)display=display.slice(0,-2)+'…';
  ctx.fillText(display,r.x+pad+7,r.y+pad+bh/2);
- if(person){ctx.fillStyle='#ffe29d';ctx.font=`850 ${mini?9:12}px system-ui`;ctx.textAlign='right';ctx.fillText(points+(mini?'':' pts'),r.x+r.w-pad-7,r.y+pad+bh/2)}
+ if(person){ctx.fillStyle='#F5CF20';ctx.font=`850 ${mini?9:12}px system-ui`;ctx.textAlign='right';ctx.fillText(points+(mini?'':' pts'),r.x+r.w-pad-7,r.y+pad+bh/2)}
  ctx.restore();
 }
 // Bolinhas circulares: o nome completo do monômero fica no objetivo acima.
@@ -675,16 +780,15 @@ function drawDropInLane(r,d,latency){
  const cx=r.x+Math.max(radius+3,Math.min(r.w-radius-3,d.x*r.w));
  ctx.save();
  rr(r.x+2,r.y+2,r.w-4,r.h-4,mini?7:11);ctx.clip();
- ctx.shadowColor=info.color;ctx.shadowBlur=mini?5:12;
- const glow=ctx.createRadialGradient(cx-radius*.3,cy-radius*.35,1,cx,cy,radius);
- glow.addColorStop(0,'#315465');glow.addColorStop(.65,'#17384a');glow.addColorStop(1,'#0b2234');
- ctx.fillStyle=glow;ctx.strokeStyle=info.color;ctx.lineWidth=mini?1.6:2.6;
+ // Moléculas em cor chapada: a fórmula escrita, e não o brilho, diferencia os tipos.
+ ctx.shadowBlur=0;
+ ctx.fillStyle='#1D1D1D';ctx.strokeStyle='#F5CF20';ctx.lineWidth=mini?1.6:2.6;
  ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);ctx.fill();ctx.stroke();
  ctx.shadowBlur=0;
  // Brilho pequeno, sem efeito oval.
- ctx.fillStyle='#ffffff29';ctx.beginPath();
+ ctx.fillStyle='#696969';ctx.beginPath();
  ctx.arc(cx-radius*.34,cy-radius*.37,mini?1.6:3,0,Math.PI*2);ctx.fill();
- ctx.fillStyle='#f5ffff';ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.fillStyle='#F7F7F7';ctx.textAlign='center';ctx.textBaseline='middle';
  const lines=mini?[MINI_DROP_LABELS[d.idx]||'?']:(ROUND_DROP_LABELS[d.idx]||['?']);
  let font=mini?Math.max(7,Math.min(8.8,radius*.72)):Math.max(8,Math.min(11,radius*.4));
  const maxTextWidth=radius*1.77;
@@ -707,15 +811,15 @@ function drawCupInLane(r,p,dt,focus,label=false){
  const w=r.mini?Math.max(18,Math.min(35,r.w*.24)):Math.max(33,Math.min(65,r.w*.14));
  const h=r.mini?Math.max(17,Math.min(32,r.h*.14)):Math.max(28,Math.min(53,r.h*.115));
  ctx.save();ctx.translate(x,y);ctx.lineWidth=focus?2.6:1.8;
- ctx.strokeStyle=focus?'#d7fff5':p.color;ctx.fillStyle='#c9f7ff15';ctx.shadowColor=p.color;ctx.shadowBlur=focus?10:4;
+ ctx.strokeStyle=focus?'#F4F4F4':p.color;ctx.fillStyle='#E5E5E515';ctx.shadowColor=p.color;ctx.shadowBlur=0;
  ctx.beginPath();ctx.moveTo(-w/2,0);ctx.lineTo(-w*.43,h*.85);ctx.quadraticCurveTo(-w*.41,h,-w*.28,h);
  ctx.lineTo(w*.28,h);ctx.quadraticCurveTo(w*.41,h,w*.43,h*.85);ctx.lineTo(w/2,0);ctx.stroke();ctx.fill();
  ctx.shadowBlur=0;
  // A LINHA ILUMINADA inteira é a zona válida de captura.
  // Se o círculo tocar em qualquer parte (inclusive a extremidade), pontua.
  const flash=focus&&performance.now()<ownCupFlash.until;
- ctx.strokeStyle=flash?(ownCupFlash.good?'#8affbe':'#ff6887'):(focus?'#9bffe5':p.color);
- ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=flash?22:11;
+ ctx.strokeStyle=flash?(ownCupFlash.good?'#F5CF20':'#F5CF20'):(focus?'#F5CF20':p.color);
+ ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=0;
  ctx.lineWidth=focus?4:2.6;ctx.lineCap='round';
  ctx.beginPath();ctx.moveTo(-w*.34,-1);ctx.lineTo(w*.34,-1);ctx.stroke();
  ctx.shadowBlur=0;ctx.lineCap='butt';
@@ -724,7 +828,7 @@ function drawCupInLane(r,p,dt,focus,label=false){
  if(label){
   const text=(p.id===myId?'VOCÊ':p.name.slice(0,8))+(arenaMode()&&DATA[p.targetIdx]?' · '+MINI_DROP_LABELS[p.targetIdx]:''),font=11;
   ctx.font=`850 ${font}px system-ui`;const tw=ctx.measureText(text).width+14;
-  ctx.fillStyle='#071826dc';rr(-tw/2,-26,tw,18,7);ctx.fill();
+  ctx.fillStyle='#0D0D0Ddc';rr(-tw/2,-26,tw,18,7);ctx.fill();
   ctx.fillStyle=p.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,0,-17);
  }
  ctx.restore();
@@ -746,7 +850,7 @@ function drawCaptureEffects(dt){
   const radius=r.mini?Math.max(9,Math.min(16,r.w*.075)):Math.max(21,Math.min(31,r.w*.084,r.h*.056));
   const color=fx.ok?'#65f5b6':'#ff637d';
   ctx.globalAlpha=a;
-  ctx.shadowColor=color;ctx.shadowBlur=18*a;
+  ctx.shadowColor=color;ctx.shadowBlur=0;
   ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,radius*(.7+.5*t),0,Math.PI*2);ctx.fill();
   ctx.shadowBlur=0;ctx.strokeStyle='#fff';ctx.lineWidth=2*a;
   ctx.beginPath();ctx.arc(x,y,radius*(1+.7*t),0,Math.PI*2);ctx.stroke();
@@ -787,7 +891,7 @@ function drawAttackGlow(r,p,now){
  const pulse=.62+.34*Math.sin(now*.03);
  ctx.save();ctx.globalAlpha=early?Math.max(.55,pulse):pulse*.7;
  ctx.strokeStyle='#ff284f';ctx.lineWidth=early?7:4;
- ctx.shadowColor='#ff244e';ctx.shadowBlur=early?34:21;
+ ctx.shadowColor='#F5CF20';ctx.shadowBlur=0;
  rr(r.x+2,r.y+2,r.w-4,r.h-4,r.mini?9:13);ctx.stroke();
  ctx.restore();
  ctx.save();ctx.fillStyle='#fb536b';ctx.font=`900 ${r.mini?9:12}px system-ui`;
@@ -798,23 +902,56 @@ function drawAttackGlow(r,p,now){
  ctx.fillText(label,r.x+r.w/2,r.y+(r.mini?43:49));
  if(!r.mini){
   const names={contamination:'+ 2–3 IMPUREZAS POR ONDA',acceleration:'VELOCIDADE TURBO',inhibitor:'ACERTOS = 0 PONTOS'};
-  ctx.fillStyle='#ffc1ca';ctx.font='800 10px system-ui';ctx.fillText(names[p.effect.type]||'',r.x+r.w/2,r.y+65);
+  ctx.fillStyle='#F5CF20';ctx.font='800 10px system-ui';ctx.fillText(names[p.effect.type]||'',r.x+r.w/2,r.y+65);
  }
  ctx.restore();
 }
+// Movimento é exibido imediatamente. Só o CONTATO VISÍVEL nesse quadro
+// pode gerar uma tentativa de captura; nunca usamos posição antiga do copo.
+function visualDropLag(now){
+ if(!world)return 0;
+ if(Number.isFinite(world.serverNow)&&clockReady)
+  return Math.max(0,Math.min(.31,(Date.now()+serverClockOffset-world.serverNow)/1000));
+ return Math.max(0,Math.min(.31,(now-worldReceivedAt)/1000+.04));
+}
+function checkOwnVisualContacts(lag){
+ if(!playing||!socket.connected||!myId||!world)return;
+ const r=laneRect(0);
+ const geo=PolyDropCollision.geometryForLane(r.w,r.h);
+ if(!geo)return;
+ const drops=arenaMode()?(world.drops||[]):(world.lanes?.[myId]||[]);
+ for(const d of drops){
+  if(!Number.isInteger(d.id)||pendingOwnContacts.has(d.id)||caughtIds.has(d.id))continue;
+  // EXATAMENTE a posição usada para desenhar o círculo neste quadro.
+  const drawnY=d.y+(d.vy||0)*lag;
+  if(drawnY<.45||drawnY>1.2)continue;
+  if(!PolyDropCollision.touchesCup(targetX,d.x,drawnY,geo))continue;
+  pendingOwnContacts.add(d.id);
+  // Evita reaparecimento durante a ida/volta; reexibe se o servidor rejeitar.
+  caughtIds.set(d.id,performance.now()+750);
+  const t=Date.now()+serverClockOffset;
+  // Enviado antes da tentativa, preservando a ordem no mesmo socket.
+  socket.emit('game:move',{x:targetX,t,seq:++moveSeq});
+  socket.emit('game:catch',{dropId:d.id,x:targetX,observedY:drawnY,
+   at:clockReady?t:null,roundId:world.roundId},reply=>{
+    if(!reply?.ok){pendingOwnContacts.delete(d.id);caughtIds.delete(d.id)}
+  });
+ }
+}
 function renderBoard(now,dt){
  ctx.clearRect(0,0,boardW,boardH);
- ctx.fillStyle='#091d2a';ctx.fillRect(0,0,boardW,boardH);
+ ctx.fillStyle='#080808';ctx.fillRect(0,0,boardW,boardH);
  const people=lanePeople();
- const lag=Math.max(0,Math.min(.16,(now-worldReceivedAt)/1000));
+ const lag=visualDropLag(now);
+ checkOwnVisualContacts(lag);
  if(arenaMode()){
   const r=laneRect(0);drawLaneBackdrop(r,0);
   for(const d of world?.drops||[])drawDropInLane(r,d,lag);
   // Cada pessoa disputa as MESMAS moléculas; não repetimos o campo quatro vezes.
   for(const p of people)if(p)drawCupInLane(r,p,dt,p.id===myId,true);
-  ctx.save();ctx.fillStyle='#061927ce';rr(r.x+9,r.y+8,Math.min(r.w-18,238),27,8);ctx.fill();
-  ctx.fillStyle='#85f5e5';ctx.font='850 11px system-ui';ctx.textBaseline='middle';ctx.textAlign='left';
-  ctx.fillText('⚔  ARENA COMPARTILHADA',r.x+19,r.y+22);ctx.restore();
+  ctx.save();ctx.fillStyle='#101010ce';rr(r.x+9,r.y+8,Math.min(r.w-18,238),27,8);ctx.fill();
+  ctx.fillStyle='#F5CF20';ctx.font='850 11px system-ui';ctx.textBaseline='middle';ctx.textAlign='left';
+  ctx.fillText('LABORATÓRIO COMPARTILHADO',r.x+19,r.y+22);ctx.restore();
  }else{
   for(let i=0;i<4;i++){
    const r=laneRect(i),p=people[i];
@@ -825,15 +962,15 @@ function renderBoard(now,dt){
     for(const d of drops)drawDropInLane(r,d,lag);
     drawCupInLane(r,p,dt,i===0);
     if(p.effect&&p.effect.until>Date.now()){
-     ctx.save();ctx.fillStyle='#ff204518';ctx.fillRect(r.x+3,r.y+29,r.w-6,r.h-31);ctx.restore();
+     ctx.save();ctx.fillStyle='#F5CF2018';ctx.fillRect(r.x+3,r.y+29,r.w-6,r.h-31);ctx.restore();
     }
     if(!p.connected){
-     ctx.save();ctx.fillStyle='#051624a5';ctx.fillRect(r.x+2,r.y+30,r.w-4,r.h-34);
-     ctx.fillStyle='#ffdda0';ctx.font=`800 ${r.mini?9:12}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';
+     ctx.save();ctx.fillStyle='#080808a5';ctx.fillRect(r.x+2,r.y+30,r.w-4,r.h-34);
+     ctx.fillStyle='#F5CF20';ctx.font=`800 ${r.mini?9:12}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';
      ctx.fillText('RECONEXÃO',r.x+r.w/2,r.y+r.h/2);ctx.restore();
     }
    }else{
-    ctx.save();ctx.fillStyle='#69909b';ctx.font=`800 ${r.mini?10:13}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.save();ctx.fillStyle='#A5A5A5';ctx.font=`800 ${r.mini?10:13}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('Pista livre',r.x+r.w/2,r.y+r.h/2);ctx.restore();
    }
    drawLaneBanner(r,p,i);

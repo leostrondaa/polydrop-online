@@ -5,6 +5,7 @@ const { Server } = require('socket.io');
 const QRCode = require('qrcode');
 const path = require('path');
 const crypto = require('crypto');
+const Collision = require('./public/collision.js');
 
 const app = express();
 app.disable('x-powered-by');
@@ -33,13 +34,13 @@ const POWERS = {
  acceleration: { duration: 5500, title: 'REAÇÃO TURBO' },
  inhibitor: { duration: 6500, title: 'INIBIDOR EXTREMO' }
 };
-const COLORS = ['#5eead4','#818cf8','#fb7185','#fbbf24'];
+const COLORS = ['#F5CF20','#F0F0F0','#AFAFAF','#777777'];
 const DATA = [
- {polymer:'PVC',monomer:'Cloreto de vinila',color:'#34d399',formula:'n CH₂=CHCl → [–CH₂–CHCl–]ₙ',use:'Canos e revestimentos',fact:'Muitas moléculas de cloreto de vinila se ligam em uma longa cadeia de PVC.'},
- {polymer:'Polietileno',monomer:'Eteno',color:'#60a5fa',formula:'n CH₂=CH₂ → [–CH₂–CH₂–]ₙ',use:'Sacolas e embalagens',fact:'Várias moléculas de eteno se ligam para formar polietileno.'},
- {polymer:'Poliestireno',monomer:'Estireno',color:'#fbbf24',formula:'n CH₂=CH–C₆H₅ → [–CH₂–CH(C₆H₅)–]ₙ',use:'Copos e isopor (EPS)',fact:'Estirenos se unem em cadeias de poliestireno.'},
- {polymer:'PTFE (Teflon)',monomer:'Tetrafluoroetileno',color:'#a78bfa',formula:'n CF₂=CF₂ → [–CF₂–CF₂–]ₙ',use:'Revestimentos de baixo atrito',fact:'O tetrafluoroetileno forma cadeias de PTFE.'},
- {polymer:'Polipropileno',monomer:'Propeno',color:'#f472b6',formula:'n CH₂=CH–CH₃ → [–CH₂–CH(CH₃)–]ₙ',use:'Potes e tampas',fact:'Propenos se ligam em cadeias de polipropileno.'}
+ {polymer:'PVC',monomer:'Cloreto de vinila',color:'#F5CF20',formula:'n CH₂=CHCl → [–CH₂–CHCl–]ₙ',use:'Canos e revestimentos',fact:'Muitas moléculas de cloreto de vinila se ligam em uma longa cadeia de PVC.'},
+ {polymer:'Polietileno',monomer:'Eteno',color:'#F5CF20',formula:'n CH₂=CH₂ → [–CH₂–CH₂–]ₙ',use:'Sacolas e embalagens',fact:'Várias moléculas de eteno se ligam para formar polietileno.'},
+ {polymer:'Poliestireno',monomer:'Estireno',color:'#F5CF20',formula:'n CH₂=CH–C₆H₅ → [–CH₂–CH(C₆H₅)–]ₙ',use:'Copos e isopor (EPS)',fact:'Estirenos se unem em cadeias de poliestireno.'},
+ {polymer:'PTFE (Teflon)',monomer:'Tetrafluoroetileno',color:'#F5CF20',formula:'n CF₂=CF₂ → [–CF₂–CF₂–]ₙ',use:'Revestimentos de baixo atrito',fact:'O tetrafluoroetileno forma cadeias de PTFE.'},
+ {polymer:'Polipropileno',monomer:'Propeno',color:'#F5CF20',formula:'n CH₂=CH–CH₃ → [–CH₂–CH(CH₃)–]ₙ',use:'Potes e tampas',fact:'Propenos se ligam em cadeias de polipropileno.'}
 ];
 const rooms = new Map();
 const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -103,8 +104,7 @@ function enter(socket,r,args){
   p={id,token:args.token,socketId:null,connected:false,disconnectedAt:0,name:nameOf(args.name),x:.5,score:0,hits:0,mistakes:0,streak:0,
     targetIdx:0,learned:new Set(),color:COLORS[r.players.size%COLORS.length],moveAt:0,
     chain:0,pendingSpecial:false,specialCooldownUntil:0,effect:null,shieldUntil:0,
-    barHalfX:.036,dropRx:.065,dropRy:.054,barLineHalfY:.005,
-    cupSideHalfX:.042,cupSideDepth:.048,moveHistory:[],moveSeq:-1};
+    collisionGeometry:Collision.geometryForLane(376,480),moveSeq:-1};
   r.players.set(id,p);
   r.privateDrops.set(id,[]);
   if(!r.hostId)r.hostId=id;
@@ -191,7 +191,7 @@ function processSpecials(r,now){
  }
  for(const p of r.players.values())if(p.pendingSpecial)launchSpecial(r,p,now);
 }
-function catchDrop(r,p,d){
+function catchDrop(r,p,d,observedY=d.y){
  const correctIdx=r.mode==='arena'?p.targetIdx:r.stage;
  const right=d.idx===correctIdx;
  let points=0;
@@ -219,81 +219,53 @@ function catchDrop(r,p,d){
  // Difundido para TODOS: a pista da pessoa correta mostra brilho/partículas.
  io.to(r.code).emit('game:hit',{
   playerId:p.id,ok:right,points,inhibited:right&&points===0,bonus:right&&p.streak%3===0,
-  id:d.id,x:d.x,y:d.y,color:right?DATA[d.idx].color:'#fb7185',
+  id:d.id,x:d.x,y:observedY,color:right?DATA[d.idx].color:'#F2F2F2',
   chain:p.chain,pendingSpecial:p.pendingSpecial,roundId:r.roundId
  });
  if(right&&r.mode==='race')launchSpecial(r,p,Date.now());
 }
-// v11: o movimento do celular é carimbado no instante do gesto.
-// A decisão da captura espera até 200 ms por pacotes em trânsito, e compara
-// a posição HISTÓRICA do copo ao momento em que a molécula passou pela borda.
-// Atrasar a confirmação é preferível a punir um desvio que já aconteceu.
-const CATCH_PLANE=.81;
-const COLLISION_BUFFER_MS=200;
-function cupXAt(p, t){
- const history=p.moveHistory||[];
- if(!history.length)return p.x;
- // Posição em degraus, nunca varrer/interpolar a trajetória lateral do copo.
- for(let i=history.length-1;i>=0;i--)if(history[i].t<=t)return history[i].x;
- return history[0].x;
-}
-function crossesCup(previousY,newY,p,d,atTime){
- if(!p.connected||newY<previousY)return false;
- const x=cupXAt(p,atTime);
- const rx=p.dropRx,ry=p.dropRy+p.barLineHalfY;
- const dx=Math.abs(x-d.x);
- const beyondBar=Math.max(0,dx-p.barHalfX);
- const closestY=clamp(CATCH_PLANE,previousY,newY);
- const gapY=Math.abs(CATCH_PLANE-closestY);
- if(beyondBar<=rx && (beyondBar/rx)**2+(gapY/ry)**2<=1)return true;
- const sideGap=Math.abs(dx-p.cupSideHalfX);
- if(sideGap>rx)return false;
- const top=CATCH_PLANE,bottom=top+p.cupSideDepth;
- const verticalGap=previousY>bottom?previousY-bottom:(newY<top?top-newY:0);
- return (sideGap/rx)**2+(verticalGap/ry)**2<=1;
-}
-function pendingCollision(r,p,d,previousY,newY,now,dt){
- if(!d.collisionSamples)d.collisionSamples=[];
- const top=CATCH_PLANE-p.dropRy-p.barLineHalfY;
- const bottom=CATCH_PLANE+p.cupSideDepth+p.dropRy;
- // Registra somente trechos em que a molécula realmente está próxima ao copo.
- if(newY>=top && previousY<=bottom){
-  d.collisionSamples.push({a:previousY,b:newY,t:now-Math.round(dt*500)});
- }
- let caught=false;
- while(d.collisionSamples.length && now-d.collisionSamples[0].t>=COLLISION_BUFFER_MS){
-  const sample=d.collisionSamples.shift();
-  if(crossesCup(sample.a,sample.b,p,d,sample.t)){caught=true;break;}
- }
- return caught;
-}
+// v13: NENHUMA captura automática. O cliente detecta o toque real que está
+// mostrando na tela e envia uma tentativa. O servidor valida a geometria,
+// identificação da molécula e o instante antes de pontuar. Isso elimina o
+// acerto retroativo após um desvio rápido, independente do ping.
 function updateDrops(r,dt,now){
  if(r.mode==='arena'){
-  // Modo compartilhado permanece sem compensação histórica nesta versão.
   for(let i=r.drops.length-1;i>=0;i--){
-   const d=r.drops[i],previousY=d.y;d.y+=d.vy*dt;
-   let winner=null,dist=Infinity;
-   for(const p of r.players.values()){
-    // Arena: usar posição atual (sem fila, para não alterar as regras compartilhadas).
-    const current={...p,moveHistory:[{t:now-1,x:p.x}]};
-    if(!crossesCup(previousY,d.y,current,d,now))continue;
-    const gap=Math.abs(p.x-d.x);
-    if(gap<dist){winner=p;dist=gap;}
-   }
-   if(winner){catchDrop(r,winner,d);r.drops.splice(i,1);}
-   else if(d.y>1.08)r.drops.splice(i,1);
+   const d=r.drops[i];d.y+=d.vy*dt;
+   // Margem após sair da tela para a confirmação chegar pela rede.
+   if(d.y>1.42)r.drops.splice(i,1);
   }
  }else for(const [id,drops] of r.privateDrops){
   const p=r.players.get(id);if(!p||!p.connected)continue;
   const speed=p.effect?.type==='acceleration'&&p.effect.until>now
    ?(r.stage>=3?1.45:1.85):1;
   for(let i=drops.length-1;i>=0;i--){
-   const d=drops[i],previousY=d.y;d.y+=d.vy*dt*speed;
-   if(pendingCollision(r,p,d,previousY,d.y,now,dt)){
-    catchDrop(r,p,d);drops.splice(i,1);
-   }else if(d.y>1.08 && !(d.collisionSamples?.length))drops.splice(i,1);
+   const d=drops[i];d.y+=d.vy*dt*speed;
+   if(d.y>1.42)drops.splice(i,1);
   }
  }
+}
+function validateClientCatch(r,p,g,now){
+ if(!g||!Number.isSafeInteger(g.dropId)||g.roundId!==r.roundId)return null;
+ if(!Number.isFinite(g.x)||!Number.isFinite(g.observedY))return null;
+ if(g.x<.045||g.x>.955||g.observedY<.5||g.observedY>1.3)return null;
+ // Eventos game:move e game:catch do mesmo socket chegam na mesma ordem.
+ // Não confie no x isolado enviado pelo cliente.
+ if(Math.abs(g.x-p.x)>.027 || !p.connected)return null;
+ const drops=r.mode==='arena'?r.drops:r.privateDrops.get(p.id);
+ if(!drops)return null;
+ const index=drops.findIndex(d=>d.id===g.dropId);
+ if(index<0)return null;
+ const d=drops[index];
+ if(!Collision.touchesCup(p.x,d.x,g.observedY,p.collisionGeometry))return null;
+ const rate=d.vy*(r.mode==='race'&&p.effect?.type==='acceleration'&&p.effect.until>now?(r.stage>=3?1.45:1.85):1);
+ // A estimativa do servidor é comparada ao quadro mostrado no celular.
+ // A janela cobre ping/jitter, mas impede capturar uma molécula distante.
+ const sampleAt=Number.isFinite(g.at)?g.at:now;
+ if(sampleAt>now+100||sampleAt<now-700)return null;
+ const expectedNowY=g.observedY+rate*Math.max(0,(now-sampleAt)/1000);
+ if(Math.abs(d.y-expectedNowY)>.045+rate*.22)return null;
+ return {drops,index,d,observedY:g.observedY};
 }
 function startMatch(r){
  const now=Date.now();
@@ -303,7 +275,7 @@ function startMatch(r){
   p.x=r.mode==='arena'?.10+.80*(i+.5)/all.length:.5;
   p.score=0;p.hits=0;p.mistakes=0;p.streak=0;p.chain=0;
   p.pendingSpecial=false;p.specialCooldownUntil=now+FIRST_SPECIAL_DELAY;
-  p.effect=null;p.shieldUntil=0;p.moveHistory=[{t:now-1000,x:p.x}];p.moveSeq=-1;p.learned.clear();
+  p.effect=null;p.shieldUntil=0;p.moveSeq=-1;p.learned.clear();
   r.privateDrops.set(p.id,[]);
  }
  r.nextSpecialAt=now+FIRST_SPECIAL_DELAY;
@@ -357,7 +329,7 @@ setInterval(()=>{
  const now=Date.now();
  for(const r of rooms.values()){
   if(r.state!=='playing')continue;
-  const base={stage:r.stage,roundId:r.roundId,remaining:Math.max(0,r.stageUntil-now),players:roster(r),mode:r.mode};
+  const base={serverNow:now,stage:r.stage,roundId:r.roundId,remaining:Math.max(0,r.stageUntil-now),players:roster(r),mode:r.mode};
   // 10 atualizações por segundo; cada navegador desenha suas 4 pistas a até 60 FPS.
   // Corrida envia as 4 coleções de gotas, não apenas a coleção do próprio jogador.
   const mapDrops=arr=>arr.map(d=>({id:d.id,x:d.x,y:d.y,idx:d.idx,vy:d.vy,toxic:!!d.toxic}));
@@ -417,19 +389,14 @@ io.on('connection',socket=>{
   if(![...r.players.values()].some(p=>p.connected))return ack({ok:false,error:'Sem jogadores conectados.'});
   startMatch(r);ack({ok:true});
  });
- // O cliente manda as dimensões NORMALIZADAS da bolinha e da linha visível.
- // Limites defensivos impedem hitboxes absurdas. A regra permanece no servidor.
+ // A mesma geometria das linhas visíveis é usada pelos dois lados.
  socket.on('game:layout',g=>{
   const r=rooms.get(socket.data.code),p=r?.players.get(socket.data.playerId);
   if(!p||p.socketId!==socket.id||!g||typeof g!=='object')return;
-  const keys=['barHalfX','dropRx','dropRy','barLineHalfY','cupSideHalfX','cupSideDepth'];
+  const keys=['barHalfX','barY','sideTopHalfX','sideBottomHalfX','sideDepth','dropRx','dropRy'];
   if(!keys.every(k=>Number.isFinite(g[k])))return;
-  p.barHalfX=clamp(g.barHalfX,.008,.075);
-  p.cupSideHalfX=clamp(g.cupSideHalfX,.012,.09);
-  p.cupSideDepth=clamp(g.cupSideDepth,.008,.09);
-  p.dropRx=clamp(g.dropRx,.014,.105);
-  p.dropRy=clamp(g.dropRy,.014,.115);
-  p.barLineHalfY=clamp(g.barLineHalfY,.001,.02);
+  const limits={barHalfX:[.008,.08],barY:[-.006,0],sideTopHalfX:[.01,.10],sideBottomHalfX:[.008,.095],sideDepth:[.02,.2],dropRx:[.013,.11],dropRy:[.013,.12]};
+  p.collisionGeometry=Object.fromEntries(keys.map(k=>[k,clamp(g[k],...limits[k])]));
  });
  // Relógio de referência: resposta com timestamp para estimar ida/volta.
  socket.on('game:clock',(_payload,ack)=>{
@@ -447,15 +414,19 @@ io.on('connection',socket=>{
   if(seq<=p.moveSeq)return;
   p.moveSeq=seq;
   const next=clamp(x,.045,.955);
-  const requested=Number.isFinite(payload?.t)?payload.t:now;
-  const time=clamp(requested,now-300,now+20);
-  // Inserção ordenada: um pacote atrasado pode ter ocorrido antes de uma captura.
-  const history=p.moveHistory||(p.moveHistory=[]);
-  let i=history.length;
-  while(i>0&&history[i-1].t>time)i--;
-  history.splice(i,0,{t:time,x:next});
-  while(history.length>2&&history[1].t<now-1000)history.shift();
   p.x=next;p.moveAt=now;
+ });
+ // Somente o contato confirmado pelo próprio quadro pode virar pontuação.
+ socket.on('game:catch',(payload={},ack=()=>{})=>{
+  const r=rooms.get(socket.data.code);
+  if(!r||r.state!=='playing')return ack({ok:false,reason:'not-playing'});
+  const p=r.players.get(socket.data.playerId);
+  if(!p||p.socketId!==socket.id)return ack({ok:false,reason:'not-player'});
+  const hit=validateClientCatch(r,p,payload,Date.now());
+  if(!hit)return ack({ok:false,reason:'invalid-contact'});
+  hit.drops.splice(hit.index,1);
+  catchDrop(r,p,hit.d,hit.observedY);
+  ack({ok:true});
  });
  socket.on('disconnect',()=>detach(socket,false));
 });
@@ -464,8 +435,8 @@ app.get('/api/qr/:code',async(req,res)=>{
  if(!/^[A-Z2-9]{5}$/.test(code)||!rooms.has(code))return res.status(404).send('Sala não encontrada');
  const proto=req.headers['x-forwarded-proto']==='https'?'https':req.protocol;
  const link=`${proto}://${req.get('host')}/?sala=${code}`;
- try{res.set('Content-Type','image/svg+xml');res.set('Cache-Control','no-store');res.send(await QRCode.toString(link,{type:'svg',margin:1,scale:6,color:{dark:'#11283b',light:'#ffffffff'}}));}
+ try{res.set('Content-Type','image/svg+xml');res.set('Cache-Control','no-store');res.send(await QRCode.toString(link,{type:'svg',margin:1,scale:6,color:{dark:'#080808',light:'#ffffffff'}}));}
  catch{res.status(500).send('Não foi possível gerar o QR Code.');}
 });
 app.get('/health',(_req,res)=>res.json({ok:true,rooms:rooms.size}));
-httpServer.listen(PORT,()=>console.log(`PolyDrop v9: missões por fase, responsabilidades no laboratório e pontuação única na porta ${PORT}`));
+httpServer.listen(PORT,()=>console.log(`PolyDrop v14: captura visual e tema preto-amarelo na porta ${PORT}`));
