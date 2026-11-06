@@ -377,7 +377,7 @@ function updateDrops(r, dt) {
 
           const gap = Math.abs(p.x - d.x);
 
-          if (gap < .11 && gap < dist) {
+          if (gap < .045 && gap < dist) {
             winner = p;
             dist = gap;
           }
@@ -404,7 +404,7 @@ function updateDrops(r, dt) {
         if (
           d.y >= .833 &&
           d.y <= .977 &&
-          Math.abs(p.x - d.x) < .11
+          Math.abs(p.x - d.x) < .045
         ) {
           catchDrop(r, p, d);
           drops.splice(i, 1);
