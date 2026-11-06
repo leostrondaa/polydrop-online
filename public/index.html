@@ -7,7 +7,7 @@
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
     <meta name="theme-color" content="#071523" />
-    <title>PolyDrop • Reação Surpresa v7</title>
+    <title>PolyDrop • Missões por fase v9</title>
     <style>
       :root {
         color-scheme: dark;
@@ -1296,6 +1296,209 @@
           width: 13px;
         }
       }
+      .game-target .special-status {
+        max-width: 100%;
+      }
+      .special-bars span.cooling {
+        background: #4875aa;
+        box-shadow: 0 0 7px #4f8aca66;
+      }
+      .cup-flash {
+        filter: drop-shadow(0 0 9px #5cffbd);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .attack-banner,
+        .special-bars span {
+          transition: none;
+        }
+      }
+
+      /* O briefing ocupa a tela inteira e pausa o jogo no próprio servidor. */
+      .mission-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 120;
+        background: radial-gradient(
+          ellipse at 50% 20%,
+          #164454 0%,
+          #061522 70%
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        overflow-y: auto;
+      }
+      .mission-overlay.hidden {
+        display: none !important;
+      }
+      .mission-card {
+        width: min(600px, 100%);
+        max-height: min(95dvh, 850px);
+        overflow-y: auto;
+        border: 1px solid #548c95;
+        border-radius: 24px;
+        background: linear-gradient(170deg, #173b4bef, #0b2234f5);
+        padding: clamp(18px, 4vw, 32px);
+        box-shadow: 0 25px 100px #000a;
+      }
+      .mission-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        color: #a6d7d8;
+        font-weight: 900;
+        font-size: 11px;
+        letter-spacing: 1.5px;
+      }
+      .mission-seconds {
+        color: #ffe5a1;
+        font-size: 13px;
+        letter-spacing: 0;
+      }
+      .mission-kicker {
+        margin-top: 23px;
+        color: #79f0d2;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .mission-title {
+        font-size: clamp(31px, 8vw, 55px);
+        line-height: 1.04;
+        letter-spacing: -1.8px;
+        margin: 10px 0 10px;
+        font-weight: 950;
+      }
+      .mission-explain {
+        color: #bed5de;
+        font-size: clamp(13px, 3vw, 16px);
+        min-height: 38px;
+        line-height: 1.4;
+        margin: 0 0 15px;
+      }
+      .mission-target {
+        border: 1px solid var(--mission-color, #54e5be);
+        background: #092637;
+        padding: 17px;
+        border-radius: 17px;
+        box-shadow: inset 0 0 23px #071e24;
+      }
+      .mission-target span {
+        font-size: 11px;
+        color: #abcbce;
+        font-weight: 900;
+        letter-spacing: 1.4px;
+        display: block;
+        margin-bottom: 8px;
+      }
+      .mission-target strong {
+        font-size: clamp(22px, 6vw, 34px);
+        line-height: 1.16;
+        color: var(--mission-color, #58e9cb);
+        overflow-wrap: anywhere;
+      }
+      .mission-fact {
+        padding: 12px 0 0;
+        color: #d0dfe0;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .mission-roles {
+        border-top: 1px solid #50768470;
+        margin-top: 17px;
+        padding-top: 12px;
+      }
+      .mission-roles.hidden {
+        display: none !important;
+      }
+      .mission-roles-title {
+        color: #9dd9de;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.8px;
+        margin-bottom: 7px;
+        text-transform: uppercase;
+      }
+      .mission-role {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        border: 1px solid #3a5a6c;
+        border-radius: 11px;
+        padding: 8px 10px;
+        margin: 6px 0;
+        background: #0b2839;
+        font-size: 12px;
+      }
+      .mission-role.mine {
+        border-color: #7cf3d8;
+        background: #17434a;
+      }
+      .mission-role b {
+        min-width: 0;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      .mission-role span {
+        font-weight: 900;
+        text-align: right;
+        flex: 0 1 51%;
+        overflow-wrap: anywhere;
+      }
+      .mission-steps {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-top: 19px;
+      }
+      .mission-steps i {
+        height: 6px;
+        border-radius: 6px;
+        background: #385969;
+        flex: 1;
+      }
+      .mission-steps i.active {
+        background: #6af0c9;
+        box-shadow: 0 0 8px #6af0c977;
+      }
+      .mission-ready {
+        font-size: 11px;
+        text-align: center;
+        color: #aac7d0;
+        margin-top: 11px;
+      }
+      @media (max-width: 600px) {
+        .mission-overlay {
+          padding: 10px;
+        }
+        .mission-card {
+          padding: 18px;
+          border-radius: 18px;
+        }
+        .mission-kicker {
+          margin-top: 14px;
+        }
+        .mission-roles {
+          margin-top: 11px;
+        }
+        .mission-role {
+          padding: 6px 9px;
+        }
+        .mission-steps {
+          margin-top: 12px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .mission-card,
+        .mission-steps i {
+          transition: none;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1469,7 +1672,6 @@
             <div id="reconnectNotice" class="reconnect-notice hidden">
               📡 Reconectando...
             </div>
-            <div id="feedback" class="feedback">+10</div>
             <div id="discovery" class="discovery" role="status">
               <div class="hint">🧪 VOCÊ DESCOBRIU!</div>
               <h4 id="discoveryTitle">Eteno → Polietileno</h4>
@@ -1511,6 +1713,45 @@
         <div id="endHint" class="helper" style="text-align: left"></div>
       </section>
       <div class="footer">PolyDrop • Química em jogo</div>
+      <div
+        id="missionOverlay"
+        class="mission-overlay hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Missão da fase"
+        aria-live="polite"
+      >
+        <div class="mission-card">
+          <div class="mission-head">
+            <span id="missionPhase">FASE 1 DE 5</span
+            ><span class="mission-seconds" id="missionSeconds">6s</span>
+          </div>
+          <div class="mission-kicker" id="missionKicker">SUA FUNÇÃO</div>
+          <h1 class="mission-title" id="missionTitle">Produza PVC</h1>
+          <p class="mission-explain" id="missionExplain">
+            Sua tarefa nesta rodada:
+          </p>
+          <div class="mission-target" id="missionTarget">
+            <span>PEGUE SOMENTE</span
+            ><strong id="missionMonomer">Cloreto de vinila</strong>
+          </div>
+          <div class="mission-fact" id="missionFact">
+            Muitas moléculas podem formar uma cadeia longa.
+          </div>
+          <div class="mission-roles hidden" id="missionRoles">
+            <div class="mission-roles-title">
+              ⚗️ Responsabilidades da equipe
+            </div>
+            <div id="missionRolesList"></div>
+          </div>
+          <div class="mission-steps" id="missionSteps">
+            <i></i><i></i><i></i>
+          </div>
+          <div class="mission-ready">
+            A fase começa automaticamente. Prepare seu béquer!
+          </div>
+        </div>
+      </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -1592,7 +1833,27 @@
         lastQR = "";
       const attackAnimations = new Map();
       let attackBannerTimer = 0;
+      const ownCupFlash = { until: 0, good: false };
+      // Android Chrome e navegadores compatíveis: vibração sem erros nos demais.
+      let hapticsEnabled = true;
+      function vibrate(kind) {
+        if (!hapticsEnabled || typeof navigator.vibrate !== "function") return;
+        const patterns = {
+          hit: [32],
+          miss: [20, 35, 65],
+          attacked: [95, 45, 130, 45, 95],
+          power: [45, 35, 100],
+        };
+        try {
+          navigator.vibrate(patterns[kind] || [28]);
+        } catch {}
+      }
       const smoothPositions = new Map();
+      let missionKey = "",
+        missionTimer = null,
+        missionUntil = 0,
+        missionCurrentSlide = -1,
+        countdownKey = "";
       const SESSION = "polydrop-player-v2",
         ROOM_KEY = "polydrop-room-v2";
       function uniqueToken() {
@@ -1813,6 +2074,9 @@
         } else copyLink();
       };
       function leave() {
+        hideMission();
+        missionKey = "";
+        countdownKey = "";
         attackAnimations.clear();
         $("attackBanner").classList.remove("show");
         socket.emit("room:leave");
@@ -1893,13 +2157,10 @@
                 ? 15
                 : 10
               : -5;
-          const el = $("feedback");
-          el.textContent = points > 0 ? "+" + points + "!" : points + "!";
-          el.style.color = d.ok ? "#7cf7d8" : "#fb7185";
-          el.classList.remove("show");
-          void el.offsetWidth;
-          el.classList.add("show");
-          sound(d.ok);
+          sound(d.ok && !d.inhibited);
+          vibrate(d.inhibited ? "miss" : d.ok ? "hit" : "miss");
+          ownCupFlash.until = performance.now() + 330;
+          ownCupFlash.good = d.ok;
         }
         // Todas as telas mostram o acerto na pista exata; só a pessoa escuta o som.
         if (Number.isInteger(d.id))
@@ -1933,16 +2194,24 @@
           }
         }
       }
+      function myAssignment(stage) {
+        if (!arenaMode()) return stage;
+        const p = (room?.players || world?.players || []).find(
+          (x) => x.id === myId,
+        );
+        return Number.isInteger(p?.targetIdx) ? p.targetIdx : stage;
+      }
       function updateStage(idx) {
         if (idx < 0 || idx >= DATA.length) return;
         lastStage = idx;
-        const d = DATA[idx];
+        const d = DATA[myAssignment(idx)] || DATA[idx];
         $("stageLabel").textContent =
           `FASE ${idx + 1} / 5` +
           (idx === 3 ? " · RÁPIDO" : idx === 4 ? " · TURBO" : "");
         $("targetPolymer").textContent = d.polymer;
         $("targetPolymer").style.color = d.color;
-        $("targetMonomer").textContent = "Pegue: " + d.monomer;
+        $("targetMonomer").textContent =
+          (arenaMode() ? "Sua responsabilidade: " : "Pegue: ") + d.monomer;
         document
           .querySelectorAll(".progress-cell")
           .forEach(
@@ -1961,17 +2230,24 @@
         for (const [i, bar] of [...$("specialBars").children].entries()) {
           bar.className = pending ? "pending" : i < charge ? "full" : "";
         }
+        const left = Math.ceil(
+          Math.max(0, (p?.specialCooldownUntil || 0) - Date.now()) / 1000,
+        );
         $("specialText").textContent = pending
-          ? "⚡ Pronto, aguardando alvo"
-          : charge + "/5 acertos seguidos";
+          ? left > 0
+            ? "⚡ Pronto · recarga " + left + "s"
+            : "⚡ Pronto · aguardando alvo"
+          : charge +
+            "/5 acertos" +
+            (left > 0 ? " · recarga " + left + "s" : "");
       }
       function showAttack(d) {
         if ((room?.mode || world?.mode) !== "race") return;
         if (room?.roundId && d.roundId && room.roundId !== d.roundId) return;
         const messages = {
-          contamination: "☣️ CONTAMINAÇÃO",
-          acceleration: "⚡ ACELERAÇÃO",
-          inhibitor: "🧬 INIBIDOR",
+          contamination: "☣️ CONTAMINAÇÃO TOTAL",
+          acceleration: "⚡ REAÇÃO TURBO",
+          inhibitor: "🧬 INIBIDOR EXTREMO",
         };
         const msg =
           (d.sourceName || "Alguém") +
@@ -1991,6 +2267,8 @@
           type: d.type,
           until: d.until,
         });
+        if (d.targetId === myId) vibrate("attacked");
+        else if (d.sourceId === myId) vibrate("power");
       }
       function updateBoardInfo() {
         if (!world) return;
@@ -2013,7 +2291,11 @@
           num.textContent = i + 1 + "°";
           const name = document.createElement("span");
           name.className = "name";
-          name.textContent = x.name;
+          name.textContent =
+            x.name +
+            (world.mode === "arena" && DATA[x.targetIdx]
+              ? " · " + DATA[x.targetIdx].monomer
+              : "");
           name.style.color = x.color;
           const pts = document.createElement("span");
           pts.className = "points";
@@ -2022,38 +2304,126 @@
           $("leaderboard").append(el);
         }
       }
+      function hideMission() {
+        $("missionOverlay").classList.add("hidden");
+        clearInterval(missionTimer);
+        missionTimer = null;
+        missionUntil = 0;
+      }
+      function missionSlide(slide) {
+        if (missionCurrentSlide === slide) return;
+        missionCurrentSlide = slide;
+        const d = DATA[myAssignment(room?.stage || 0)] || DATA[0];
+        const leads = [
+          "SUA FUNÇÃO",
+          "O QUE VOCÊ DEVE PEGAR",
+          "QUÍMICA EM 5 SEGUNDOS",
+        ];
+        const explains = [
+          "Cada jogador tem uma responsabilidade nesta fase.",
+          "Acerte seu monômero. Outros elementos tiram pontos.",
+          d.fact + " " + d.use,
+        ];
+        $("missionKicker").textContent = leads[slide];
+        $("missionExplain").textContent = explains[slide];
+        [...$("missionSteps").children].forEach((el, i) =>
+          el.classList.toggle("active", i === slide),
+        );
+      }
+      function refreshMission() {
+        if (!room || room.state !== "briefing") {
+          hideMission();
+          return;
+        }
+        const left = Math.max(0, missionUntil - Date.now());
+        $("missionSeconds").textContent = Math.ceil(left / 1000) + "s";
+        // São três pequenos slides de texto, sem precisar tocar ou passar manualmente.
+        const fraction = Math.max(0, Math.min(0.999, (6000 - left) / 6000));
+        missionSlide(Math.min(2, Math.floor(fraction * 3)));
+      }
+      function showMission(snapshot) {
+        if (!snapshot || snapshot.state !== "briefing") return;
+        const key = snapshot.roundId + ":" + snapshot.stage;
+        room = { ...room, ...snapshot };
+        if (lastStartedRound !== snapshot.roundId) {
+          lastStartedRound = snapshot.roundId;
+          finishedRound = -1;
+          world = null;
+          smoothPositions.clear();
+          targetX = 0.5;
+          displayX = 0.5;
+          lastStage = -1;
+          sparkles.length = 0;
+          captureEffects.length = 0;
+          caughtIds.clear();
+          attackAnimations.clear();
+          $("attackBanner").classList.remove("show");
+        }
+        showScreen("game");
+        playing = false;
+        clearInterval(countTick);
+        $("countdown").classList.add("hidden");
+        if (key !== missionKey) {
+          missionKey = key;
+          missionCurrentSlide = -1;
+          const d = DATA[myAssignment(snapshot.stage)] || DATA[snapshot.stage];
+          $("missionPhase").textContent = `FASE ${snapshot.stage + 1} DE 5`;
+          $("missionTitle").textContent =
+            snapshot.mode === "arena"
+              ? "Missão distribuída!"
+              : "Produza " + d.polymer;
+          $("missionMonomer").textContent = d.monomer;
+          $("missionTarget").style.setProperty("--mission-color", d.color);
+          $("missionFact").textContent = "💡 " + d.fact;
+          const arena = snapshot.mode === "arena";
+          $("missionRoles").classList.toggle("hidden", !arena);
+          $("missionRolesList").replaceChildren();
+          if (arena) {
+            (snapshot.players || []).forEach((p, i) => {
+              const row = document.createElement("div");
+              row.className = "mission-role" + (p.id === myId ? " mine" : "");
+              const name = document.createElement("b");
+              name.textContent = p.id === myId ? "⭐ VOCÊ" : p.name;
+              const target = document.createElement("span");
+              const task = DATA[p.targetIdx];
+              target.textContent = task?.monomer || "Sem missão";
+              target.style.color = task?.color || "#e6ffff";
+              row.append(name, target);
+              $("missionRolesList").append(row);
+            });
+          }
+          updateStage(snapshot.stage);
+        }
+        missionUntil = snapshot.briefingUntil || Date.now() + 6000;
+        $("missionOverlay").classList.remove("hidden");
+        refreshMission();
+        if (!missionTimer) missionTimer = setInterval(refreshMission, 120);
+      }
       function startCountdown(snapshot) {
-        if (lastStartedRound === snapshot.roundId) return;
-        lastStartedRound = snapshot.roundId;
-        finishedRound = -1;
+        const key = snapshot.roundId + ":" + snapshot.stage;
+        if (countdownKey === key) return;
+        countdownKey = key;
+        hideMission();
         showScreen("game");
         playing = false;
         world = null;
-        smoothPositions.clear();
-        targetX = 0.5;
-        displayX = 0.5;
-        lastStage = -1;
-        sparkles.length = 0;
-        captureEffects.length = 0;
-        caughtIds.clear();
-        attackAnimations.clear();
-        $("attackBanner").classList.remove("show");
-        updateStage(0);
         clearInterval(countTick);
-        countEnd = snapshot.countdownUntil || Date.now() + 3500;
+        countEnd = snapshot.countdownUntil || Date.now() + 1800;
         $("countdown").classList.remove("hidden");
+        updateStage(snapshot.stage);
         const update = () => {
           const n = Math.max(0, Math.ceil((countEnd - Date.now()) / 1000));
           $("countdown").textContent = n ? String(n) : "VAI!";
           if (!n) {
             clearInterval(countTick);
-            setTimeout(() => $("countdown").classList.add("hidden"), 500);
+            setTimeout(() => $("countdown").classList.add("hidden"), 450);
           }
         };
         update();
         countTick = setInterval(update, 100);
       }
       function finishGame(data) {
+        hideMission();
         playing = false;
         clearInterval(countTick);
         $("countdown").classList.add("hidden");
@@ -2102,10 +2472,13 @@
         storeRoom(room.code);
         history.replaceState(null, "", linkToRoom(room.code));
         updateLobby();
-        if (room.state === "countdown") {
+        if (room.state === "briefing") {
+          showMission(room);
+        } else if (room.state === "countdown") {
           startCountdown(room);
           if (uiState !== "game") showScreen("game");
         } else if (room.state === "playing") {
+          hideMission();
           if (uiState !== "game") showScreen("game");
           requestAnimationFrame(sendCupGeometry);
           clearInterval(countTick);
@@ -2118,6 +2491,7 @@
             finishGame({ players: room.players, mode: room.mode });
           }
         } else {
+          hideMission();
           playing = false;
           if (uiState !== "lobby") showScreen("lobby");
         }
@@ -2178,6 +2552,7 @@
       });
       socket.on("game:stage", (d) => {
         if (!room) return;
+        hideMission();
         playing = true;
         clearInterval(countTick);
         $("countdown").classList.add("hidden");
@@ -2186,6 +2561,7 @@
       });
       socket.on("game:world", (d) => {
         if (!room) return;
+        hideMission();
         world = d;
         worldReceivedAt = performance.now();
         playing = true;
@@ -2213,7 +2589,7 @@
         $("board").classList.toggle("arena-view", arena);
         $("board").classList.toggle("race-view", !arena);
         $("board").querySelector(".board-label").textContent = arena
-          ? "Uma arena • todos disputam juntos"
+          ? "Cada béquer tem seu próprio monômero"
           : "Sua pista grande • rivais ao vivo";
       }
       function sizeCanvas() {
@@ -2230,18 +2606,20 @@
       addEventListener("resize", () => {
         if (uiState === "game") sizeCanvas();
       });
-      // Envia ao servidor o tamanho real da região CENTRAL da boca do copo.
-      // A tolerância acompanha PC/celular (não é um percentual fixo da pista).
+      // Geometria visível: a linha azul é literalmente a superfície de captura.
+      // O servidor aplica a colisão círculo × segmento varrida (sem hitbox invisível).
       function sendCupGeometry() {
         if (!room || !socket.connected) return;
         const r = laneRect(0);
         if (r.w <= 0 || r.h <= 0) return;
         const cupWidth = Math.max(33, Math.min(65, r.w * 0.14));
-        const centerTolerance = (cupWidth * 0.19) / r.w;
-        socket.emit(
-          "game:layout",
-          Math.max(0.012, Math.min(0.032, centerTolerance)),
-        );
+        const radius = Math.max(21, Math.min(31, r.w * 0.084, r.h * 0.056));
+        socket.emit("game:layout", {
+          barHalfX: (cupWidth * 0.37) / r.w,
+          dropRx: (radius + 1.3) / r.w,
+          dropRy: (radius + 1.3) / r.h,
+          barLineHalfY: 2.2 / r.h,
+        });
       }
       function requestMove(x) {
         targetX = Math.max(0.045, Math.min(0.955, x));
@@ -2581,13 +2959,26 @@
         ctx.stroke();
         ctx.fill();
         ctx.shadowBlur = 0;
-        // Marca visual discreta no CENTRO da boca: só ali a molécula pontua.
-        ctx.strokeStyle = focus ? "#baffc8" : p.color;
-        ctx.lineWidth = focus ? 3 : 1.8;
+        // A LINHA ILUMINADA inteira é a zona válida de captura.
+        // Se o círculo tocar em qualquer parte (inclusive a extremidade), pontua.
+        const flash = focus && performance.now() < ownCupFlash.until;
+        ctx.strokeStyle = flash
+          ? ownCupFlash.good
+            ? "#8affbe"
+            : "#ff6887"
+          : focus
+            ? "#9bffe5"
+            : p.color;
+        ctx.shadowColor = ctx.strokeStyle;
+        ctx.shadowBlur = flash ? 22 : 11;
+        ctx.lineWidth = focus ? 4 : 2.6;
+        ctx.lineCap = "round";
         ctx.beginPath();
-        ctx.moveTo(-w * 0.19, -1);
-        ctx.lineTo(w * 0.19, -1);
+        ctx.moveTo(-w * 0.37, -1);
+        ctx.lineTo(w * 0.37, -1);
         ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.lineCap = "butt";
         ctx.fillStyle = p.color + "b8";
         ctx.beginPath();
         ctx.moveTo(-w * 0.39, h * 0.52);
@@ -2597,7 +2988,11 @@
         ctx.closePath();
         ctx.fill();
         if (label) {
-          const text = p.id === myId ? "VOCÊ" : p.name.slice(0, 9),
+          const text =
+              (p.id === myId ? "VOCÊ" : p.name.slice(0, 8)) +
+              (arenaMode() && DATA[p.targetIdx]
+                ? " · " + MINI_DROP_LABELS[p.targetIdx]
+                : ""),
             font = 11;
           ctx.font = `850 ${font}px system-ui`;
           const tw = ctx.measureText(text).width + 14;
@@ -2700,20 +3095,20 @@
       function attackShake(p, now) {
         if (!p || !attackAnimations.has(p.id)) return 0;
         const age = now - attackAnimations.get(p.id).at;
-        if (age > 700) return 0;
-        return Math.sin(age * 0.1) * 3.3 * (1 - age / 700);
+        if (age > 1200) return 0;
+        return Math.sin(age * 0.11) * 6 * (1 - age / 1200);
       }
       function drawAttackGlow(r, p, now) {
         if (!p || !p.effect || p.effect.until <= Date.now()) return;
         const initial = attackAnimations.get(p.id);
         const early = initial && now - initial.at < 1050;
-        const pulse = 0.42 + 0.24 * Math.sin(now * 0.023);
+        const pulse = 0.62 + 0.34 * Math.sin(now * 0.03);
         ctx.save();
         ctx.globalAlpha = early ? Math.max(0.55, pulse) : pulse * 0.7;
-        ctx.strokeStyle = "#ff4d68";
-        ctx.lineWidth = early ? 5 : 3;
+        ctx.strokeStyle = "#ff284f";
+        ctx.lineWidth = early ? 7 : 4;
         ctx.shadowColor = "#ff244e";
-        ctx.shadowBlur = early ? 24 : 13;
+        ctx.shadowBlur = early ? 34 : 21;
         rr(r.x + 2, r.y + 2, r.w - 4, r.h - 4, r.mini ? 9 : 13);
         ctx.stroke();
         ctx.restore();
@@ -2730,6 +3125,16 @@
         };
         const label = `${icons[p.effect.type] || "⚠"} ${Math.max(0, remaining)}s`;
         ctx.fillText(label, r.x + r.w / 2, r.y + (r.mini ? 43 : 49));
+        if (!r.mini) {
+          const names = {
+            contamination: "+ 2–3 IMPUREZAS POR ONDA",
+            acceleration: "VELOCIDADE TURBO",
+            inhibitor: "ACERTOS = 0 PONTOS",
+          };
+          ctx.fillStyle = "#ffc1ca";
+          ctx.font = "800 10px system-ui";
+          ctx.fillText(names[p.effect.type] || "", r.x + r.w / 2, r.y + 65);
+        }
         ctx.restore();
       }
       function renderBoard(now, dt) {
@@ -2766,6 +3171,12 @@
               const drops = world?.lanes?.[p.id] || [];
               for (const d of drops) drawDropInLane(r, d, lag);
               drawCupInLane(r, p, dt, i === 0);
+              if (p.effect && p.effect.until > Date.now()) {
+                ctx.save();
+                ctx.fillStyle = "#ff204518";
+                ctx.fillRect(r.x + 3, r.y + 29, r.w - 6, r.h - 31);
+                ctx.restore();
+              }
               if (!p.connected) {
                 ctx.save();
                 ctx.fillStyle = "#051624a5";

@@ -24,18 +24,22 @@ const PORT = process.env.PORT || 3000;
 const LIMIT = 4;
 const STAGES = 5;
 const ROUND_MS = 22000;
+const BRIEFING_MS = 6000; // Cartão de missão antes de cada fase; jogo pausado.
+const STAGE_COUNTDOWN_MS = 1800;
 // As duas últimas fases aceleram de verdade, mantendo a dificuldade gradual.
 const SPEED = [1, 1.28, 1.72, 2.7, 4.0];
 const SPAWN_MS = [1000, 850, 650, 425, 265];
 const GRACE_MS = 90000;
 // Reação Surpresa: só Corrida Individual, após 5 acertos consecutivos.
 const SPECIAL_STREAK = 5;
-const SPECIAL_COOLDOWN = 12000;
-const TARGET_SHIELD = 8000;
+const SPECIAL_COOLDOWN = 28000; // 28s por atacante
+const GLOBAL_SPECIAL_COOLDOWN = 9000; // 9s entre ataques da sala
+const FIRST_SPECIAL_DELAY = 10000; // ninguém ataca na largada
+const TARGET_SHIELD = 10000; // 10s de proteção após o efeito
 const POWERS = {
-  contamination: { duration: 5000, title: "CONTAMINAÇÃO" },
-  acceleration: { duration: 4000, title: "ACELERAÇÃO" },
-  inhibitor: { duration: 5000, title: "INIBIDOR" },
+  contamination: { duration: 6500, title: "CONTAMINAÇÃO TOTAL" },
+  acceleration: { duration: 5500, title: "REAÇÃO TURBO" },
+  inhibitor: { duration: 6500, title: "INIBIDOR EXTREMO" },
 };
 const COLORS = ["#5eead4", "#818cf8", "#fb7185", "#fbbf24"];
 const DATA = [
@@ -115,8 +119,10 @@ function publicPlayer(p) {
     hits: p.hits,
     mistakes: p.mistakes,
     streak: p.streak,
+    targetIdx: p.targetIdx,
     chain: p.chain,
     pendingSpecial: p.pendingSpecial,
+    specialCooldownUntil: p.specialCooldownUntil,
     effect: p.effect && p.effect.until > Date.now() ? p.effect : null,
     color: p.color,
     connected: p.connected,
@@ -139,6 +145,7 @@ function info(r) {
     players: roster(r),
     stage: r.stage,
     maxPlayers: LIMIT,
+    briefingUntil: r.state === "briefing" ? r.briefingUntil : 0,
     countdown:
       r.state === "countdown"
         ? Math.max(0, Math.ceil((r.countdownUntil - Date.now()) / 1000))
@@ -164,9 +171,11 @@ function createRoom(mode) {
     nextId: 1,
     stage: 0,
     roundId: 0,
+    briefingUntil: 0,
     countdownUntil: 0,
     stageUntil: 0,
     spawnAt: 0,
+    nextSpecialAt: 0,
     lastTick: Date.now(),
   };
   rooms.set(r.code, r);
@@ -229,6 +238,7 @@ function enter(socket, r, args) {
       hits: 0,
       mistakes: 0,
       streak: 0,
+      targetIdx: 0,
       learned: new Set(),
       color: COLORS[r.players.size % COLORS.length],
       moveAt: 0,
@@ -237,7 +247,10 @@ function enter(socket, r, args) {
       specialCooldownUntil: 0,
       effect: null,
       shieldUntil: 0,
-      captureHalfWidth: 0.022,
+      barHalfX: 0.04,
+      dropRx: 0.065,
+      dropRy: 0.054,
+      barLineHalfY: 0.005,
     };
     r.players.set(id, p);
     r.privateDrops.set(id, []);
@@ -265,18 +278,66 @@ function enter(socket, r, args) {
   emitInfo(r);
   return snapshot;
 }
+// A missão no laboratório é uma responsabilidade exclusiva por jogador.
+// São sorteados sem repetição 1 dos 5 monômeros disponíveis, a cada fase.
+function assignMissions(r) {
+  const deck = DATA.map((_, i) => i);
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  let slot = 0;
+  for (const p of r.players.values()) {
+    p.targetIdx = r.mode === "arena" ? deck[slot++] : r.stage;
+  }
+}
+// Não há geração, queda nem pontuação durante a apresentação da missão.
+function beginBriefing(r, now) {
+  assignMissions(r);
+  r.state = "briefing";
+  r.briefingUntil = now + BRIEFING_MS;
+  r.countdownUntil = 0;
+  r.stageUntil = 0;
+  r.spawnAt = 0;
+  r.drops = [];
+  for (const p of r.players.values()) {
+    r.privateDrops.set(p.id, []);
+    // Evita ataques de uma fase anterior atrapalharem a nova missão.
+    p.effect = null;
+  }
+  emitInfo(r);
+}
 function spawn(r, forcedWrong = false) {
-  const correct = !forcedWrong && Math.random() < 0.56;
-  const options = correct
-    ? [r.stage]
-    : DATA.map((_, i) => i).filter((i) => i !== r.stage);
-  const idx = options[Math.floor(Math.random() * options.length)];
+  let idx;
+  if (r.mode === "arena") {
+    const assigned = [...r.players.values()]
+      .filter((p) => p.connected)
+      .map((p) => p.targetIdx);
+    const unassigned = DATA.map((_, i) => i).filter(
+      (i) => !assigned.includes(i),
+    );
+    // Distribuição justa: cerca de 75% dos itens são missões ativas,
+    // divididos igualmente entre as responsabilidades dos jogadores.
+    // Os demais são distrações, que ninguém deve pegar.
+    const pool =
+      assigned.length && (Math.random() < 0.75 || !unassigned.length)
+        ? assigned
+        : unassigned;
+    idx = pool[Math.floor(Math.random() * pool.length)] ?? r.stage;
+  } else {
+    const correct = !forcedWrong && Math.random() < 0.56;
+    const pool = correct
+      ? [r.stage]
+      : DATA.map((_, i) => i).filter((i) => i !== r.stage);
+    idx = pool[Math.floor(Math.random() * pool.length)];
+  }
   return {
     id: r.nextId++,
     x: random(0.19, 0.81),
     y: -0.065,
     idx,
     vy: random(0.19, 0.255) * SPEED[r.stage],
+    toxic: forcedWrong,
   };
 }
 // O servidor decide ataque, alvo e duração. Nunca aceita um 'acerto' enviado pelo cliente.
@@ -285,7 +346,8 @@ function launchSpecial(r, p, now) {
     r.mode !== "race" ||
     !p.connected ||
     !p.pendingSpecial ||
-    now < p.specialCooldownUntil
+    now < p.specialCooldownUntil ||
+    now < r.nextSpecialAt
   )
     return;
   const targets = [...r.players.values()].filter(
@@ -304,6 +366,7 @@ function launchSpecial(r, p, now) {
   target.shieldUntil = now + duration + TARGET_SHIELD;
   p.pendingSpecial = false;
   p.specialCooldownUntil = now + SPECIAL_COOLDOWN;
+  r.nextSpecialAt = now + GLOBAL_SPECIAL_COOLDOWN;
   io.to(r.code).emit("game:power", {
     sourceId: p.id,
     sourceName: p.name,
@@ -325,7 +388,8 @@ function processSpecials(r, now) {
     if (p.pendingSpecial) launchSpecial(r, p, now);
 }
 function catchDrop(r, p, d) {
-  const right = d.idx === r.stage;
+  const correctIdx = r.mode === "arena" ? p.targetIdx : r.stage;
+  const right = d.idx === correctIdx;
   let points = 0;
   if (right) {
     p.streak++;
@@ -336,31 +400,38 @@ function catchDrop(r, p, d) {
       r.mode === "race" &&
       p.effect?.type === "inhibitor" &&
       p.effect.until > Date.now();
-    points = inhibited ? Math.ceil(nominal / 2) : nominal;
+    points = inhibited ? 0 : nominal;
     p.score += points;
-    if (r.mode === "race" && !p.pendingSpecial) {
+    if (r.mode === "race" && !p.pendingSpecial && !inhibited) {
       p.chain++;
       if (p.chain >= SPECIAL_STREAK) {
         p.chain = 0;
         p.pendingSpecial = true;
       }
     }
-    if (!p.learned.has(r.stage)) {
-      p.learned.add(r.stage);
-      if (p.socketId) io.to(p.socketId).emit("game:discovery", DATA[r.stage]);
+    if (!p.learned.has(correctIdx)) {
+      p.learned.add(correctIdx);
+      if (p.socketId)
+        io.to(p.socketId).emit("game:discovery", DATA[correctIdx]);
     }
   } else {
     p.streak = 0;
     p.chain = 0;
     p.mistakes++;
-    points = -Math.min(5, p.score);
-    p.score = Math.max(0, p.score - 5);
+    const contaminated =
+      r.mode === "race" &&
+      p.effect?.type === "contamination" &&
+      p.effect.until > Date.now();
+    const penalty = contaminated ? 10 : 5;
+    points = -Math.min(penalty, p.score);
+    p.score = Math.max(0, p.score - penalty);
   }
   // Difundido para TODOS: a pista da pessoa correta mostra brilho/partículas.
   io.to(r.code).emit("game:hit", {
     playerId: p.id,
     ok: right,
     points,
+    inhibited: right && points === 0,
     bonus: right && p.streak % 3 === 0,
     id: d.id,
     x: d.x,
@@ -372,16 +443,20 @@ function catchDrop(r, p, d) {
   });
   if (right && r.mode === "race") launchSpecial(r, p, Date.now());
 }
-// A colisão ocorre apenas quando o CENTRO da bolinha cruza a borda do copo
-// (boca desenhada em 81% da pista). Sem região vertical comprida e sem 'laterais'.
+// Colisão geométrica entre a borda horizontal iluminada do copo e a bolinha.
+// Qualquer parte do círculo tocando QUALQUER trecho da linha faz a captura.
+// Calculada no servidor com as dimensões reais da pista do próprio jogador.
+// Teste varrido: não perde colisões quando a bolinha anda muito num só tick.
 const CATCH_PLANE = 0.81;
 function crossesCup(previousY, newY, p, d) {
-  return (
-    p.connected &&
-    previousY < CATCH_PLANE &&
-    newY >= CATCH_PLANE &&
-    Math.abs(p.x - d.x) <= p.captureHalfWidth
-  );
+  if (!p.connected || newY < previousY) return false;
+  const rx = p.dropRx,
+    ry = p.dropRy + p.barLineHalfY;
+  const beyondBar = Math.max(0, Math.abs(p.x - d.x) - p.barHalfX);
+  if (beyondBar > rx) return false;
+  const closestY = clamp(CATCH_PLANE, previousY, newY);
+  const gapY = Math.abs(CATCH_PLANE - closestY);
+  return (beyondBar / rx) ** 2 + (gapY / ry) ** 2 <= 1;
 }
 function updateDrops(r, dt, now) {
   if (r.mode === "arena") {
@@ -411,8 +486,8 @@ function updateDrops(r, dt, now) {
       const speed =
         p.effect?.type === "acceleration" && p.effect.until > now
           ? r.stage >= 3
-            ? 1.15
-            : 1.3
+            ? 1.45
+            : 1.85
           : 1;
       for (let i = drops.length - 1; i >= 0; i--) {
         const d = drops[i],
@@ -426,7 +501,7 @@ function updateDrops(r, dt, now) {
     }
 }
 function startMatch(r) {
-  r.state = "countdown";
+  const now = Date.now();
   r.stage = 0;
   r.roundId++;
   r.drops = [];
@@ -441,20 +516,19 @@ function startMatch(r) {
     p.streak = 0;
     p.chain = 0;
     p.pendingSpecial = false;
-    p.specialCooldownUntil = 0;
+    p.specialCooldownUntil = now + FIRST_SPECIAL_DELAY;
     p.effect = null;
     p.shieldUntil = 0;
     p.learned.clear();
     r.privateDrops.set(p.id, []);
   }
-  r.countdownUntil = Date.now() + 3500;
-  r.stageUntil = 0;
-  r.spawnAt = 0;
-  r.lastTick = Date.now();
-  emitInfo(r);
+  r.nextSpecialAt = now + FIRST_SPECIAL_DELAY;
+  r.lastTick = now;
+  beginBriefing(r, now);
 }
 function finish(r) {
   r.state = "finished";
+  r.briefingUntil = 0;
   r.countdownUntil = 0;
   r.drops = [];
   io.to(r.code).emit("game:finished", {
@@ -469,6 +543,12 @@ function tick() {
   for (const r of rooms.values()) {
     const dt = clamp((now - r.lastTick) / 1000, 0, 0.12);
     r.lastTick = now;
+    if (r.state === "briefing" && now >= r.briefingUntil) {
+      r.state = "countdown";
+      r.briefingUntil = 0;
+      r.countdownUntil = now + STAGE_COUNTDOWN_MS;
+      emitInfo(r);
+    }
     if (r.state === "countdown" && now >= r.countdownUntil) {
       r.state = "playing";
       r.countdownUntil = 0;
@@ -484,12 +564,8 @@ function tick() {
         continue;
       }
       r.stage++;
-      r.stageUntil = now + ROUND_MS;
-      r.spawnAt = now + 500;
-      r.drops = [];
-      for (const p of r.players.values()) r.privateDrops.set(p.id, []);
-      io.to(r.code).emit("game:stage", { stage: r.stage, roundId: r.roundId });
-      emitInfo(r);
+      beginBriefing(r, now);
+      continue; // Evita gerar moléculas durante o cartão.
     }
     processSpecials(r, now);
     const interval =
@@ -513,13 +589,11 @@ function tick() {
           const p = r.players.get(id);
           if (!p?.connected) continue;
           arr.push(spawn(r));
-          // Mais 60% de impurezas em relação à taxa básica (44% das gotas).
-          if (
-            p.effect?.type === "contamination" &&
-            p.effect.until > now &&
-            Math.random() < 0.264
-          )
-            arr.push(spawn(r, true));
+          // Tempestade: 2 a 3 impurezas extras a CADA pulso de geração.
+          if (p.effect?.type === "contamination" && p.effect.until > now) {
+            arr.push(spawn(r, true), spawn(r, true));
+            if (Math.random() < 0.65) arr.push(spawn(r, true));
+          }
         }
       r.spawnAt += interval;
     }
@@ -541,7 +615,14 @@ setInterval(() => {
     // 10 atualizações por segundo; cada navegador desenha suas 4 pistas a até 60 FPS.
     // Corrida envia as 4 coleções de gotas, não apenas a coleção do próprio jogador.
     const mapDrops = (arr) =>
-      arr.map((d) => ({ id: d.id, x: d.x, y: d.y, idx: d.idx, vy: d.vy }));
+      arr.map((d) => ({
+        id: d.id,
+        x: d.x,
+        y: d.y,
+        idx: d.idx,
+        vy: d.vy,
+        toxic: !!d.toxic,
+      }));
     if (r.mode === "arena")
       io.to(r.code).emit("game:world", { ...base, drops: mapDrops(r.drops) });
     else {
@@ -550,8 +631,8 @@ setInterval(() => {
         const speed =
           p.effect?.type === "acceleration" && p.effect.until > now
             ? r.stage >= 3
-              ? 1.15
-              : 1.3
+              ? 1.45
+              : 1.85
             : 1;
         lanes[p.id] = mapDrops(r.privateDrops.get(p.id) || []).map((d) => ({
           ...d,
@@ -632,13 +713,18 @@ io.on("connection", (socket) => {
     startMatch(r);
     ack({ ok: true });
   });
-  // A largura da zona central vem do desenho real do copo na tela do jogador.
-  // O servidor valida e limita o valor; não utiliza a largura total da pista.
-  socket.on("game:layout", (ratio) => {
+  // O cliente manda as dimensões NORMALIZADAS da bolinha e da linha visível.
+  // Limites defensivos impedem hitboxes absurdas. A regra permanece no servidor.
+  socket.on("game:layout", (g) => {
     const r = rooms.get(socket.data.code),
       p = r?.players.get(socket.data.playerId);
-    if (!p || p.socketId !== socket.id || !Number.isFinite(ratio)) return;
-    p.captureHalfWidth = clamp(ratio, 0.012, 0.032);
+    if (!p || p.socketId !== socket.id || !g || typeof g !== "object") return;
+    const keys = ["barHalfX", "dropRx", "dropRy", "barLineHalfY"];
+    if (!keys.every((k) => Number.isFinite(g[k]))) return;
+    p.barHalfX = clamp(g.barHalfX, 0.008, 0.075);
+    p.dropRx = clamp(g.dropRx, 0.014, 0.105);
+    p.dropRy = clamp(g.dropRy, 0.014, 0.115);
+    p.barLineHalfY = clamp(g.barLineHalfY, 0.001, 0.02);
   });
   socket.on("game:move", (x) => {
     const r = rooms.get(socket.data.code);
@@ -676,5 +762,7 @@ app.get("/api/qr/:code", async (req, res) => {
 });
 app.get("/health", (_req, res) => res.json({ ok: true, rooms: rooms.size }));
 httpServer.listen(PORT, () =>
-  console.log(`PolyDrop v7: especiais + colisão central na porta ${PORT}`),
+  console.log(
+    `PolyDrop v9: missões por fase, responsabilidades no laboratório e pontuação única na porta ${PORT}`,
+  ),
 );
