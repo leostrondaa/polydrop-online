@@ -170,7 +170,44 @@ button:focus-visible,input:focus-visible{outline:2px solid #F5CF20;outline-offse
 .mission-steps i{background:#383838;border-radius:2px}
 .mission-steps i.active{background:#F5CF20}
 @media(max-width:800px){.home{grid-template-columns:1fr;gap:27px;min-height:unset;padding-top:42px;max-width:540px}.hero-title{font-size:clamp(62px,12vw,86px);letter-spacing:-4px}.hero-desc{max-width:none}.lobby-layout{grid-template-columns:1fr}}
+/* COOP — informação essencial, sem efeitos visuais artificiais. */
+.coop-status{display:flex;gap:12px;flex-wrap:wrap;margin-top:7px;color:#F5CF20;font-size:12px;font-weight:850}
+.coop-status.hide{display:none!important}
+.spectator-notice{position:absolute;top:12%;left:50%;transform:translateX(-50%);z-index:8;
+ background:#F5CF20;color:#090909;border:2px solid #090909;padding:10px 14px;
+ border-radius:5px;font-size:clamp(11px,2vw,14px);font-weight:950;white-space:nowrap;pointer-events:none}
+.spectator-notice.hidden{display:none!important}
 @media(max-width:620px){.home{margin:0 auto}.topbar{width:calc(100% - 28px);padding:12px 0}.container{width:calc(100% - 28px)}.home{gap:24px;padding:43px 0 24px}.hero-title{font-size:clamp(60px,14vw,78px);letter-spacing:-4px;margin-bottom:12px}.hero-desc{font-size:14px}.panel,.home .panel{padding:20px;border-radius:9px}.mode{min-height:50px}.mode b{font-size:12px}.game-hud{border-radius:7px}.game-shell{padding:0 7px 7px}.board{border-radius:7px}.lobby{padding-top:24px}.lobby-head{margin-bottom:16px}.mission-card{border-radius:9px}.game-target .mono{font-size:11px}}
+
+/* Regras por modalidade: uma mensagem de cada vez, sem gradientes nem enfeites. */
+.rules-overlay{position:fixed;inset:0;z-index:135;display:grid;place-items:center;padding:18px;background:#080808}
+.rules-overlay.hidden{display:none!important}
+.rules-card{width:min(530px,100%);min-height:315px;display:flex;flex-direction:column;justify-content:space-between;gap:18px;padding:clamp(23px,5vw,38px);border:1px solid #F5CF20;border-radius:10px;background:#141414;color:#FAFAFA}
+.rules-top{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:11px;font-weight:900;letter-spacing:1px;color:#F5CF20}
+.rules-counter{color:#BDBDBD;white-space:nowrap}
+.rules-content{min-height:138px;display:flex;flex-direction:column;justify-content:center;gap:13px;animation:rulesSwap 1800ms both}
+.rules-title{font-size:clamp(30px,7vw,44px);font-weight:950;line-height:1.07;letter-spacing:-1.2px;margin:0}
+.rules-text{font-size:clamp(14px,3.4vw,17px);line-height:1.5;color:#D0D0D0;max-width:420px;margin:0}
+.rules-progress{display:flex;gap:8px}
+.rules-progress span{height:5px;flex:1;border-radius:1px;background:#383838}
+.rules-progress span.active{background:#F5CF20}
+@keyframes rulesSwap{0%{opacity:0;transform:translateY(14px)}15%{opacity:1;transform:translateY(0)}82%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-12px)}}
+/* Revisão opcional: ativa aprendizagem sem poluir o HUD. */
+.review-area{margin-top:16px;max-width:720px}
+.review-toggle{width:100%;text-align:center}
+.review-panel{margin-top:10px;padding:20px;background:#151515;border:1px solid #444;border-radius:9px}
+.review-panel[hidden],.review-next[hidden]{display:none!important}
+.review-meta{font-size:11px;font-weight:850;letter-spacing:1.1px;color:#F5CF20;margin:0 0 9px}
+.review-question{font-size:clamp(18px,4vw,23px);line-height:1.25;margin:0 0 16px;color:#FAFAFA}
+.review-options{display:grid;gap:8px}
+.review-option{width:100%;text-align:left;background:#0B0B0B;color:#F4F4F4;border:1px solid #454545;border-radius:6px;padding:12px 14px;font-size:14px;font-weight:800}
+.review-option:enabled:hover{border-color:#F5CF20}
+.review-option.correct{border-color:#F5CF20;background:#25210D}
+.review-option.wrong{border-color:#777;background:#232323}
+.review-feedback{font-size:13px;line-height:1.5;color:#D4D4D4;min-height:0;margin:12px 0}
+.review-next{margin-top:5px;width:100%}
+@media(max-width:390px){.rules-card{min-height:296px;padding:20px}.rules-title{font-size:31px}.rules-content{min-height:145px}}
+@media(prefers-reduced-motion:reduce){.rules-content{animation:none!important;opacity:1!important;transform:none!important}}
 </style>
 </head>
 <body>
@@ -202,9 +239,12 @@ button:focus-visible,input:focus-visible{outline:2px solid #F5CF20;outline-offse
       <div class="panel invite-panel"><h3 class="section-title">Convidar</h3><div class="room-code"><div class="mini">CÓDIGO DA SALA</div><div id="roomCode" class="code-big">-----</div></div><div class="qr-shell"><img id="qr" alt="QR Code da sala" width="158" height="158"></div><div class="action-row"><button id="copyLink" class="secondary">Copiar link</button><button id="shareLink" class="secondary">Compartilhar</button></div></div>
     </div>
   </section>
-  <section id="gameShell" class="game-shell"><main class="game-main"><div class="game-hud"><div class="game-target"><div id="stageLabel" class="small">FASE 1 / 5</div><h2 id="targetPolymer">Produza PVC</h2><div id="targetMonomer" class="mono">Pegue: Cloreto de vinila</div><div id="specialStatus" class="special-status"><span>⚡ ESPECIAL</span><div id="specialBars" class="special-bars"><span></span><span></span><span></span><span></span><span></span></div><span id="specialText">0/5 acertos</span></div></div><div class="game-timer"><b id="timeLeft">22s</b><div>RESTANTE</div></div></div><div id="stageProgress" class="progress-row"><span class="progress-cell current"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span></div><div id="board" class="board four-lanes race-view"><canvas id="canvas" aria-label="Campo do jogo, mova o béquer para capturar monômeros"></canvas><div class="board-label">Arraste para mover</div><div id="countdown" class="float hidden">3</div><div id="attackBanner" class="attack-banner" role="status" aria-live="polite"></div><div id="reconnectNotice" class="reconnect-notice hidden">📡 Reconectando...</div><div id="discovery" class="discovery" role="status"><div class="hint">DESCOBERTA</div><h4 id="discoveryTitle">Eteno → Polietileno</h4><p id="discoveryFact"></p><p id="discoveryUse"></p><button id="closeDiscovery" title="Fechar">×</button></div></div><div class="hintbar"><span><strong id="modeTag">Corrida individual</strong> <span id="mobileRank">• Rank #1</span></span><span id="selfScore" class="score-mini">★ 0 pontos</span></div></main><aside class="scoreboard"><h3>Placar</h3><div class="entries" id="leaderboard"></div></aside></section>
-  <section id="endScreen" class="screen container results"><h1>Resultado</h1><div id="podium" class="podium"></div><div class="panel list"><h3 class="section-title">Classificação</h3><div id="finalRanking"></div></div><div class="end-actions"><button id="playAgain" class="primary">Jogar de novo</button><button id="leaveEnd" class="secondary">Sair da sala</button></div><div id="endHint" class="helper" style="text-align:left"></div></section>
+  <section id="gameShell" class="game-shell"><main class="game-main"><div class="game-hud"><div class="game-target"><div id="stageLabel" class="small">FASE 1 / 5</div><h2 id="targetPolymer">Produza PVC</h2><div id="targetMonomer" class="mono">Pegue: Cloreto de vinila</div><div id="coopStatus" class="coop-status hide"><span id="teamGoal">META 0 / 80</span><span id="livesStatus">♥ 5/5</span></div><div id="specialStatus" class="special-status"><span>⚡ ESPECIAL</span><div id="specialBars" class="special-bars"><span></span><span></span><span></span><span></span><span></span></div><span id="specialText">0/5 acertos</span></div></div><div class="game-timer"><b id="timeLeft">22s</b><div id="timerCaption">RESTANTE</div></div></div><div id="stageProgress" class="progress-row"><span class="progress-cell current"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span><span class="progress-cell"></span></div><div id="board" class="board four-lanes race-view"><canvas id="canvas" aria-label="Campo do jogo, mova o béquer para capturar monômeros"></canvas><div class="board-label">Arraste para mover</div><div id="spectatorNotice" class="spectator-notice hidden">ELIMINADO — ASSISTINDO A EQUIPE</div><div id="countdown" class="float hidden">3</div><div id="attackBanner" class="attack-banner" role="status" aria-live="polite"></div><div id="reconnectNotice" class="reconnect-notice hidden">📡 Reconectando...</div><div id="discovery" class="discovery" role="status"><div class="hint">DESCOBERTA</div><h4 id="discoveryTitle">Eteno → Polietileno</h4><p id="discoveryFact"></p><p id="discoveryUse"></p><button id="closeDiscovery" title="Fechar">×</button></div></div><div class="hintbar"><span><strong id="modeTag">Corrida individual</strong> <span id="mobileRank">• Rank #1</span></span><span id="selfScore" class="score-mini">★ 0 pontos</span></div></main><aside class="scoreboard"><h3>Placar</h3><div class="entries" id="leaderboard"></div></aside></section>
+  <section id="endScreen" class="screen container results"><h1 id="endTitle">Resultado</h1><div id="podium" class="podium"></div><div class="panel list"><h3 id="resultListTitle" class="section-title">Classificação</h3><div id="finalRanking"></div></div><div class="review-area"><button id="reviewToggle" class="secondary review-toggle" type="button">Revisão rápida · 3 perguntas</button><div id="reviewPanel" class="review-panel" hidden><div id="reviewMeta" class="review-meta">PERGUNTA 1 DE 3</div><h2 id="reviewQuestion" class="review-question">Qual monômero forma PVC?</h2><div id="reviewOptions" class="review-options"></div><p id="reviewFeedback" class="review-feedback" aria-live="polite"></p><button id="reviewNext" class="primary review-next" type="button" hidden>Próxima</button></div></div><div class="end-actions"><button id="playAgain" class="primary">Jogar de novo</button><button id="leaveEnd" class="secondary">Sair da sala</button></div><div id="endHint" class="helper" style="text-align:left"></div></section>
   
+  <div id="rulesOverlay" class="rules-overlay hidden" role="dialog" aria-modal="true" aria-label="Regras do modo de jogo">
+   <div class="rules-card"><div class="rules-top"><span id="rulesMode">REGRAS · INDIVIDUAL</span><span class="rules-counter" id="rulesCounter">1 / 3</span></div><div class="rules-content" id="rulesContent" aria-live="polite"><h1 id="rulesTitle" class="rules-title">Pegue o monômero certo.</h1><p id="rulesText" class="rules-text">Arraste o copo para capturar.</p></div><div class="rules-progress" id="rulesProgress" aria-hidden="true"><span></span><span></span><span></span></div></div>
+  </div>
   <div id="missionOverlay" class="mission-overlay hidden" role="dialog" aria-modal="true" aria-label="Missão da fase" aria-live="polite">
    <div class="mission-card">
     <div class="mission-head"><span id="missionPhase">FASE 1 DE 5</span><span class="mission-seconds" id="missionSeconds">6s</span></div>
@@ -263,6 +303,22 @@ function vibrate(kind){
 const smoothPositions=new Map();
 const pendingOwnContacts=new Set();
 let missionKey='', missionTimer=null, missionUntil=0, missionCurrentSlide=-1, countdownKey='';
+const RULES_SLIDE_MS=1800, FIRST_BRIEFING_MS=3600, OTHER_BRIEFING_MS=4800;
+const MODE_RULES={
+ race:[
+  ['Pegue o monômero certo.','Arraste o copo. Siga o alvo da fase.'],
+  ['Desvie das impurezas.','Elas tiram pontos. Cinco acertos seguidos liberam um ataque.'],
+  ['Mais pontos vence.','Cinco fases com tempo. Dispute o topo do placar.']
+ ],
+ arena:[
+  ['Cinco vidas cada.','Pegou errado? Perde uma vida. Zerou? Vira espectador.'],
+  ['Uma tarefa por pessoa.','Pegue seu monômero. Sobreviventes herdam tarefas dos eliminados.'],
+  ['Todos por uma meta.','Somem pontos. Um sobrevivente pode completar a equipe.']
+ ]
+};
+let rulesKey='',rulesUntil=0,rulesTimer=null,rulesCurrentSlide=-1;
+let reviewIndices=[],reviewStep=0,reviewScore=0,reviewAnswered=false;
+
 const SESSION='polydrop-player-v2', ROOM_KEY='polydrop-room-v2';
 function uniqueToken(){
  try{return crypto.randomUUID()+'-'+crypto.randomUUID()}catch{return Array.from({length:4},()=>Math.random().toString(36).slice(2)).join('')}
@@ -295,7 +351,7 @@ function doRequest(event,payload){return new Promise(resolve=>{
  if(!socket.connected)return resolve({ok:false,error:'Sem conexão. Tente novamente.'});
  socket.timeout(9000).emit(event,payload,(err,response)=>resolve(err?{ok:false,error:'Servidor sem resposta. Tente novamente.'}:response));
 })}
-const modeName=v=>v==='arena'?'⚔️ Laboratório compartilhado':'🏁 Corrida individual';
+const modeName=v=>v==='arena'?'Cooperativo de sobrevivência':'Corrida individual';
 function linkToRoom(code){return location.origin+location.pathname+'?sala='+encodeURIComponent(code)}
 function storeRoom(code){sessionStorage.setItem(ROOM_KEY,code)}
 function clearRoom(){sessionStorage.removeItem(ROOM_KEY)}
@@ -348,7 +404,7 @@ $('shareLink').onclick=async()=>{
  if(navigator.share){try{await navigator.share({title:'PolyDrop',url:linkToRoom(room.code)})}catch{}}else copyLink();
 };
 function leave(){
- hideMission();missionKey='';countdownKey='';
+ hideRules();hideMission();missionKey='';countdownKey='';
  attackAnimations.clear();$('attackBanner').classList.remove('show');
  socket.emit('room:leave');pendingOwnContacts.clear();caughtIds.clear();room=null;myId=null;world=null;smoothPositions.clear();playing=false;lastStage=-1;lastQR='';lastStartedRound=-1;finishedRound=-1;
  clearRoom();clearInterval(countTick);history.replaceState(null,'',location.pathname);showScreen('home');
@@ -395,8 +451,10 @@ function hitEffect(d){
  }
  // Todas as telas mostram o acerto na pista exata; só a pessoa escuta o som.
  if(Number.isInteger(d.id))caughtIds.set(d.id,performance.now()+1100);
+ const value=Number.isFinite(d.points)?d.points:(d.ok?10:-5);
+ const label=d.lifeLost?'−1 ♥':value>0?'+'+value:String(value);
  const fx={playerId:d.playerId||myId,x:d.x,y:Number.isFinite(d.y)?d.y:.81,
-  age:0,ok:!!d.ok,label:(Number.isFinite(d.points)?d.points:(d.ok?(d.bonus?15:10):-5))>0?'+'+(Number.isFinite(d.points)?d.points:(d.bonus?15:10)):String(Number.isFinite(d.points)?d.points:-5),color:d.color||'#F5CF20'};
+  age:0,ok:!!d.ok,label,color:d.color||'#F5CF20'};
  captureEffects.push(fx);
  sparkles.push({...fx,color:d.ok?'#5ef2b3':'#F5CF20'});
  if(own && world){
@@ -404,17 +462,20 @@ function hitEffect(d){
   if(p){p.chain=d.chain||0;p.pendingSpecial=!!d.pendingSpecial;updateSpecialStatus(p)}
  }
 }
+function myPlayer(){const players=['rules','briefing','countdown'].includes(room?.state)?room?.players:(world?.players||room?.players);return (players||[]).find(x=>x.id===myId);}
+function assignedTargets(){return myPlayer()?.targets||[];}
+function targetLabel(targets){return targets.map(i=>DATA[i]?.monomer).filter(Boolean).join(' • ')||'Sem elemento';}
 function myAssignment(stage){
  if(!arenaMode())return stage;
- const p=(room?.players||world?.players||[]).find(x=>x.id===myId);
- return Number.isInteger(p?.targetIdx)?p.targetIdx:stage;
+ return assignedTargets()[0]??stage;
 }
 function updateStage(idx){
  if(idx<0||idx>=DATA.length)return;
- lastStage=idx;const d=DATA[myAssignment(idx)]||DATA[idx];
+ lastStage=idx;const coop=arenaMode(),d=DATA[myAssignment(idx)]||DATA[idx];
  $('stageLabel').textContent=`FASE ${idx+1} / 5`+(idx===3?' · RÁPIDO':idx===4?' · TURBO':'');
- $('targetPolymer').textContent=d.polymer;$('targetPolymer').style.color=d.color;
- $('targetMonomer').textContent=(arenaMode()?'Sua responsabilidade: ':'Pegue: ')+d.monomer;
+ $('targetPolymer').textContent=coop?'Meta coletiva':'Produza '+d.polymer;
+ $('targetPolymer').style.color='#F5CF20';
+ $('targetMonomer').textContent=coop?(myPlayer()?.eliminated?'Você está assistindo':'Pegue: '+targetLabel(assignedTargets())):'Pegue: '+d.monomer;
  document.querySelectorAll('.progress-cell').forEach((c,i)=>c.className='progress-cell'+(i<idx?' complete':i===idx?' current':''));
 }
 function updateSpecialStatus(p){
@@ -445,20 +506,75 @@ function showAttack(d){
 }
 function updateBoardInfo(){
  if(!world)return;
- const p=world.players.find(x=>x.id===myId),rank=world.players.findIndex(x=>x.id===myId)+1;
- $('selfScore').textContent=`★ ${p?.score||0} pts`;$('mobileRank').textContent=rank?'• #'+rank:'';
+ const p=world.players.find(x=>x.id===myId),coop=world.mode==='arena';
+ const rank=world.players.findIndex(x=>x.id===myId)+1;
+ $('coopStatus').classList.toggle('hide',!coop);
+ $('spectatorNotice').classList.toggle('hidden',!coop||!p?.eliminated);
+ $('teamGoal').textContent=`EQUIPE ${world.teamScore||0} pts`;
+ $('livesStatus').textContent=p?.eliminated?'ELIMINADO':`♥ ${p?.lives??5}/5`;
+ $('selfScore').textContent=coop?`Você: ${p?.score||0} pts`:`★ ${p?.score||0} pts`;
+ $('mobileRank').textContent=coop?'':rank?'• #'+rank:'';
  updateSpecialStatus(p);
- $('timeLeft').textContent=Math.ceil(world.remaining/1000)+'s';
- $('timeLeft').style.color=world.remaining<6000?'#F5CF20':'#f4fbff';
- $('modeTag').textContent=world.mode==='arena'?'Arena':'Corrida';
+ $('timeLeft').textContent=coop?`${world.stageScore||0}/${world.stageGoal||80}`:Math.ceil(world.remaining/1000)+'s';
+ $('timerCaption').textContent=coop?'META DA FASE':'RESTANTE';
+ $('timeLeft').style.color='#F5CF20';
+ $('modeTag').textContent=coop?'Cooperativo':'Corrida';
+ if(coop)$('targetMonomer').textContent=p?.eliminated?'Você está assistindo':'Pegue: '+targetLabel(p?.targets||[]);
  $('leaderboard').replaceChildren();
  for(let i=0;i<world.players.length;i++){
   const x=world.players[i],el=document.createElement('div');el.className='rank'+(x.id===myId?' me':'');
   const num=document.createElement('span');num.className='num';num.textContent=(i+1)+'°';
-  const name=document.createElement('span');name.className='name';name.textContent=x.name+(world.mode==='arena'&&DATA[x.targetIdx]?' · '+DATA[x.targetIdx].monomer:'');name.style.color=x.color;
-  const pts=document.createElement('span');pts.className='points';pts.textContent=x.score;
+  const name=document.createElement('span');name.className='name';
+  name.textContent=x.name+(coop?' · '+(x.eliminated?'ELIMINADO':targetLabel(x.targets||[])):'');
+  name.style.color=x.color;
+  const pts=document.createElement('span');pts.className='points';
+  pts.textContent=coop?(x.eliminated?'✕':`♥${x.lives} · ${x.score}`):x.score;
   el.append(num,name,pts);$('leaderboard').append(el);
  }
+}
+function hideRules(){
+ $('rulesOverlay').classList.add('hidden');
+ if(rulesTimer){clearInterval(rulesTimer);rulesTimer=null;}
+ rulesUntil=0;
+}
+function rulesSlide(slide,elapsed=0){
+ if(slide===rulesCurrentSlide)return;
+ rulesCurrentSlide=slide;
+ const copy=MODE_RULES[room?.mode]||MODE_RULES.race;
+ $('rulesMode').textContent=room?.mode==='arena'?'REGRAS · COOPERATIVO':'REGRAS · INDIVIDUAL';
+ $('rulesCounter').textContent=(slide+1)+' / 3';
+ $('rulesTitle').textContent=copy[slide][0];
+ $('rulesText').textContent=copy[slide][1];
+ [...$('rulesProgress').children].forEach((x,i)=>x.classList.toggle('active',i===slide));
+ const content=$('rulesContent');
+ content.classList.remove('rules-content');
+ void content.offsetWidth; // Reinicia a animação na mudança da mensagem.
+ content.classList.add('rules-content');
+ content.style.animationDelay='-'+Math.max(0,Math.min(RULES_SLIDE_MS-60,elapsed))+'ms';
+}
+function refreshRules(){
+ if(!room||room.state!=='rules'){hideRules();return;}
+ const elapsed=Math.max(0,Math.min(5399,(Date.now()+serverClockOffset)-(rulesUntil-5400)));
+ const slide=Math.min(2,Math.floor(elapsed/RULES_SLIDE_MS));
+ rulesSlide(slide,elapsed%RULES_SLIDE_MS);
+}
+function showRules(snapshot){
+ if(!snapshot||snapshot.state!=='rules')return;
+ room={...room,...snapshot};
+ const key=snapshot.roundId+':'+snapshot.mode;
+ if(rulesKey!==key){
+  rulesKey=key;rulesCurrentSlide=-1;
+  // Reinício e nova rodada: descarta efeitos visuais da partida anterior.
+  world=null;playing=false;
+  smoothPositions.clear();pendingOwnContacts.clear();caughtIds.clear();
+ }
+ hideMission();
+ showScreen('game');playing=false;
+ clearInterval(countTick);$('countdown').classList.add('hidden');
+ rulesUntil=snapshot.rulesUntil||Date.now()+5400;
+ $('rulesOverlay').classList.remove('hidden');
+ refreshRules();
+ if(!rulesTimer)rulesTimer=setInterval(refreshRules,75);
 }
 function hideMission(){
  $('missionOverlay').classList.add('hidden');
@@ -467,11 +583,15 @@ function hideMission(){
 function missionSlide(slide){
  if(missionCurrentSlide===slide)return;
  missionCurrentSlide=slide;
- const d=DATA[myAssignment(room?.stage||0)]||DATA[0];
- const leads=['SUA FUNÇÃO','O QUE VOCÊ DEVE PEGAR','QUÍMICA EM 5 SEGUNDOS'];
- const explains=[
-  'Cada jogador tem uma responsabilidade nesta fase.',
-  'Acerte seu monômero. Outros elementos tiram pontos.',
+ const d=DATA[myAssignment(room?.stage||0)]||DATA[0],coop=arenaMode();
+ const leads=coop?['MISSÃO COLETIVA','SOBREVIVA','APRENDA QUÍMICA']:['SUA FUNÇÃO','O QUE VOCÊ DEVE PEGAR','QUÍMICA EM 5 SEGUNDOS'];
+ const explains=coop?[
+  `Equipe: marque ${room?.stageGoal||80} pontos nesta etapa.`,
+  'Monômero errado custa 1 vida. Com 0 vidas, você vira espectador; os sobreviventes herdam seus elementos.',
+  d.fact+' '+d.use
+ ]:[
+  'Sua missão nesta fase é produzir o polímero indicado.',
+  'Pegue o monômero correto e desvie dos outros.',
   d.fact+' '+d.use
  ];
  $('missionKicker').textContent=leads[slide];
@@ -483,11 +603,13 @@ function refreshMission(){
  const left=Math.max(0,missionUntil-Date.now());
  $('missionSeconds').textContent=Math.ceil(left/1000)+'s';
  // São três pequenos slides de texto, sem precisar tocar ou passar manualmente.
- const fraction=Math.max(0,Math.min(.999,(6000-left)/6000));
+ const duration=(room?.stage===0?FIRST_BRIEFING_MS:OTHER_BRIEFING_MS);
+ const fraction=Math.max(0,Math.min(.999,(duration-left)/duration));
  missionSlide(Math.min(2,Math.floor(fraction*3)));
 }
 function showMission(snapshot){
  if(!snapshot||snapshot.state!=='briefing')return;
+ hideRules();
  const key=snapshot.roundId+':'+snapshot.stage;
  room={...room,...snapshot};
  if(lastStartedRound!==snapshot.roundId){
@@ -502,10 +624,11 @@ function showMission(snapshot){
   missionKey=key;missionCurrentSlide=-1;
   const d=DATA[myAssignment(snapshot.stage)]||DATA[snapshot.stage];
   $('missionPhase').textContent=`FASE ${snapshot.stage+1} DE 5`;
-  $('missionTitle').textContent=snapshot.mode==='arena'?'Sua missão':'Produza '+d.polymer;
-  $('missionMonomer').textContent=d.monomer;
+  $('missionTitle').textContent=snapshot.mode==='arena'?`Equipe: ${snapshot.stageGoal||80} pontos`:'Produza '+d.polymer;
+  $('missionMonomer').textContent=snapshot.mode==='arena'
+   ?(myPlayer()?.eliminated?'Você está assistindo':targetLabel(assignedTargets())):d.monomer;
   $('missionTarget').style.setProperty('--mission-color',d.color);
-  $('missionFact').textContent='💡 '+d.fact;
+  $('missionFact').textContent=snapshot.mode==='arena'?('EXEMPLO: '+d.monomer+' → '+d.polymer+'. '+d.use):('EXEMPLO: '+d.monomer+' → '+d.polymer+'. '+d.use);
   const arena=snapshot.mode==='arena';
   $('missionRoles').classList.toggle('hidden',!arena);
   $('missionRolesList').replaceChildren();
@@ -514,20 +637,20 @@ function showMission(snapshot){
     const row=document.createElement('div');row.className='mission-role'+(p.id===myId?' mine':'');
     const name=document.createElement('b');name.textContent=(p.id===myId?'⭐ VOCÊ':p.name);
     const target=document.createElement('span');
-    const task=DATA[p.targetIdx];
-    target.textContent=task?.monomer||'Sem missão';
+    target.textContent=p.eliminated?'Eliminado':targetLabel(p.targets||[]);
     target.style.color='#F5CF20';
     row.append(name,target);$('missionRolesList').append(row);
    });
   }
   updateStage(snapshot.stage);
  }
- missionUntil=snapshot.briefingUntil||Date.now()+6000;
+ missionUntil=snapshot.briefingUntil||Date.now()+(snapshot.stage===0?FIRST_BRIEFING_MS:OTHER_BRIEFING_MS);
  $('missionOverlay').classList.remove('hidden');
  refreshMission();
  if(!missionTimer)missionTimer=setInterval(refreshMission,120);
 }
 function startCountdown(snapshot){
+ hideRules();
  pendingOwnContacts.clear();
  const key=snapshot.roundId+':'+snapshot.stage;
  if(countdownKey===key)return;
@@ -546,25 +669,91 @@ function startCountdown(snapshot){
  };
  update();countTick=setInterval(update,100);
 }
+function prepareReview(){
+ const seed=(room?.roundId||1)%DATA.length;
+ reviewIndices=[seed,(seed+2)%DATA.length,(seed+4)%DATA.length];
+ reviewStep=0;reviewScore=0;reviewAnswered=false;
+ $('reviewPanel').hidden=true;
+ $('reviewToggle').textContent='Revisão rápida · 3 perguntas';
+ $('reviewNext').hidden=true;
+ $('reviewFeedback').textContent='';
+}
+function showReviewQuestion(){
+ reviewAnswered=false;
+ const idx=reviewIndices[reviewStep],d=DATA[idx];
+ $('reviewMeta').textContent=`PERGUNTA ${reviewStep+1} DE 3`;
+ $('reviewQuestion').textContent=`Qual monômero forma ${d.polymer}?`;
+ $('reviewFeedback').textContent='';$('reviewNext').hidden=true;
+ $('reviewOptions').replaceChildren();
+ // Alterna a ordem sem dependências e sem respostas repetidas.
+ const answers=[idx,(idx+1)%DATA.length,(idx+3)%DATA.length];
+ answers.sort((a,b)=>((a+reviewStep*2)%DATA.length)-((b+reviewStep*2)%DATA.length));
+ answers.forEach(candidate=>{
+  const btn=document.createElement('button');btn.type='button';btn.className='review-option';
+  btn.textContent=DATA[candidate].monomer;
+  btn.addEventListener('click',()=>{
+   if(reviewAnswered)return;
+   reviewAnswered=true;
+   if(candidate===idx)reviewScore++;
+   for(const b of $('reviewOptions').children){
+    const isRight=b.textContent===d.monomer;
+    b.disabled=true;b.classList.toggle('correct',isRight);
+    b.classList.toggle('wrong',b===btn&&!isRight);
+   }
+   $('reviewFeedback').textContent=(candidate===idx?'Acertou! ':'Era '+d.monomer+'. ')+d.formula+' · '+d.use;
+   $('reviewNext').hidden=false;
+   $('reviewNext').textContent=reviewStep===reviewIndices.length-1?'Ver resultado':'Próxima';
+  });
+  $('reviewOptions').append(btn);
+ });
+}
+$('reviewToggle').addEventListener('click',()=>{
+ if(!$('reviewPanel').hidden && reviewStep<reviewIndices.length){$('reviewPanel').hidden=true;return;}
+ reviewStep=0;reviewScore=0;
+ $('reviewPanel').hidden=false;
+ showReviewQuestion();
+});
+$('reviewNext').addEventListener('click',()=>{
+ if(!reviewAnswered)return;
+ reviewStep++;
+ if(reviewStep===reviewIndices.length){
+  $('reviewMeta').textContent='REVISÃO CONCLUÍDA';
+  $('reviewQuestion').textContent=`${reviewScore} de 3 respostas corretas`;
+  $('reviewOptions').replaceChildren();
+  $('reviewFeedback').textContent='Monômeros são as unidades que se unem para formar polímeros.';
+  $('reviewNext').hidden=true;
+  $('reviewToggle').textContent='Refazer revisão';
+  return;
+ }
+ showReviewQuestion();
+});
 function finishGame(data){
- hideMission();playing=false;clearInterval(countTick);$('countdown').classList.add('hidden');$('discovery').classList.remove('show');
- showScreen('end');$('podium').replaceChildren();
- const winners=data.players.slice(0,3),arranged=[winners[1],winners[0],winners[2]],medals=['🥈','🥇','🥉'];
- for(let i=0;i<3;i++){
-  const p=arranged[i],el=document.createElement('div');el.className='podium-person'+(i===1?' first':'');
-  const m=document.createElement('span');m.className='medal';m.textContent=medals[i];
-  const n=document.createElement('strong');n.textContent=p?p.name:'—';
-  const pts=document.createElement('span');pts.className='pts';pts.textContent=p?p.score+' pts':'—';
-  el.append(m,n,pts);$('podium').append(el);
+ hideRules();hideMission();playing=false;clearInterval(countTick);$('countdown').classList.add('hidden');$('discovery').classList.remove('show');
+ showScreen('end');prepareReview();$('podium').replaceChildren();
+ const coop=data.mode==='arena';
+ $('endTitle').textContent=coop?(data.result==='victory'?'EQUIPE VENCEU!':'EQUIPE ELIMINADA'):'Resultado';
+ $('resultListTitle').textContent=coop?'Contribuição dos jogadores':'Classificação';
+ $('podium').style.display=coop?'none':'';
+ if(!coop){
+  const winners=data.players.slice(0,3),arranged=[winners[1],winners[0],winners[2]],medals=['🥈','🥇','🥉'];
+  for(let i=0;i<3;i++){
+   const p=arranged[i],el=document.createElement('div');el.className='podium-person'+(i===1?' first':'');
+   const m=document.createElement('span');m.className='medal';m.textContent=medals[i];
+   const n=document.createElement('strong');n.textContent=p?p.name:'—';
+   const pts=document.createElement('span');pts.className='pts';pts.textContent=p?p.score+' pts':'—';
+   el.append(m,n,pts);$('podium').append(el);
+  }
  }
  $('finalRanking').replaceChildren();
  data.players.forEach((p,i)=>{
   const el=document.createElement('div');el.className='result-row';
-  const n=document.createElement('span');n.textContent=`${i+1}º ${p.name}${p.id===myId?' (você)':''} · ${p.hits} acertos`;
+  const n=document.createElement('span');
+  n.textContent=`${coop?'':(i+1)+'º '}${p.name}${p.id===myId?' (você)':''} · ${p.hits} acertos`+(coop?` · ${p.eliminated?'eliminado':p.lives+' vidas'}`:'');
   const pts=document.createElement('b');pts.textContent=p.score+' pts';el.append(n,pts);$('finalRanking').append(el);
  });
  const host=room?.hostId===myId;
- $('playAgain').classList.toggle('hide',!host);$('endHint').textContent=host?'Revanche?':'Aguarde o líder.';
+ $('playAgain').classList.toggle('hide',!host);
+ $('endHint').textContent=(coop?`Equipe: ${data.teamScore??room?.teamScore??0} pontos. `:'')+(host?'Jogar de novo?':'Aguarde o líder.');
 }
 function syncRoom(snapshot){
  if(!snapshot)return;
@@ -574,22 +763,24 @@ function syncRoom(snapshot){
  if(snapshot.youId)myId=snapshot.youId;
  storeRoom(room.code);history.replaceState(null,'',linkToRoom(room.code));
  updateLobby();
- if(room.state==='briefing'){
+ if(room.state==='rules'){
+  showRules(room);
+ }else if(room.state==='briefing'){
   showMission(room);
  }else if(room.state==='countdown'){
   startCountdown(room);
   if(uiState!=='game')showScreen('game');
  }else if(room.state==='playing'){
-  hideMission();
+  hideRules();hideMission();
   if(uiState!=='game')showScreen('game');
   requestAnimationFrame(sendCupGeometry);
   clearInterval(countTick);$('countdown').classList.add('hidden');
   playing=true;
   if(lastStage!==room.stage)updateStage(room.stage);
  }else if(room.state==='finished'){
-  if(uiState!=='end'||finishedRound!==room.roundId){finishedRound=room.roundId;finishGame({players:room.players,mode:room.mode})}
+  if(uiState!=='end'||finishedRound!==room.roundId){finishedRound=room.roundId;finishGame({players:room.players,mode:room.mode,result:room.result,teamScore:room.teamScore})}
  }else{
-  hideMission();playing=false;
+  hideRules();hideMission();playing=false;
   if(uiState!=='lobby')showScreen('lobby');
  }
 }
@@ -615,17 +806,17 @@ socket.on('connect_error',()=>setConnection(false));
 socket.on('room:joined',data=>{room=data;myId=data.youId||myId;syncRoom(data)});
 socket.on('room:info',data=>{if(!room||room.code!==data.code)return;syncRoom(data)});
 socket.on('room:replaced',()=>{
- room=null;myId=null;playing=false;clearRoom();showScreen('home');message('Esta sessão foi aberta em outra aba.');
+ hideRules();hideMission();room=null;myId=null;playing=false;clearRoom();showScreen('home');message('Esta sessão foi aberta em outra aba.');
 });
 socket.on('game:stage',d=>{
  if(!room)return;
- hideMission();playing=true;clearInterval(countTick);$('countdown').classList.add('hidden');
+ hideRules();hideMission();playing=true;clearInterval(countTick);$('countdown').classList.add('hidden');
  if(uiState!=='game')showScreen('game');
  updateStage(d.stage);
 });
 socket.on('game:world',d=>{
  if(!room)return;
- hideMission();world=d;worldReceivedAt=performance.now();playing=true;
+ hideRules();hideMission();world=d;worldReceivedAt=performance.now();playing=true;
  updateBoardMode(d.mode);
  if(uiState!=='game')showScreen('game');
  if(d.stage!==lastStage)updateStage(d.stage);
@@ -634,6 +825,13 @@ socket.on('game:world',d=>{
 socket.on('game:hit',hitEffect);
 socket.on('game:power',showAttack);
 socket.on('game:discovery',showDiscovery);
+socket.on('game:eliminated',d=>{
+ if(!room||d.roundId!==room.roundId)return;
+ if(d.playerId===myId){activePointerId=null;vibrate('attacked');}
+ $('attackBanner').textContent=(d.playerId===myId?'Você foi eliminado.':'Jogador eliminado: '+d.name)+ ' Os sobreviventes assumem as tarefas.';
+ $('attackBanner').classList.add('show');clearTimeout(attackBannerTimer);
+ attackBannerTimer=setTimeout(()=>$('attackBanner').classList.remove('show'),3000);
+});
 socket.on('game:finished',d=>{
  if(!room)return;
  finishedRound=d.roundId;
@@ -646,7 +844,7 @@ function updateBoardMode(newMode){
  const arena=newMode==='arena';
  $('board').classList.toggle('arena-view',arena);
  $('board').classList.toggle('race-view',!arena);
- $('board').querySelector('.board-label').textContent=arena?'Cada béquer tem seu próprio monômero':'Sua pista grande • rivais ao vivo';
+ $('board').querySelector('.board-label').textContent=arena?'5 vidas · equipe unida':'Sua pista grande · rivais ao vivo';
 }
 function sizeCanvas(){
  const rect=$('board').getBoundingClientRect();
@@ -666,7 +864,11 @@ function sendCupGeometry(){
  const geo=PolyDropCollision.geometryForLane(r.w,r.h);
  if(geo)socket.emit('game:layout',geo);
 }
+function canPlayCoop(){
+ const p=myPlayer();return !arenaMode()||!!(p&&p.connected&&!p.eliminated);
+}
 function requestMove(x){
+ if(!canPlayCoop())return;
  targetX=Math.max(.045,Math.min(.955,x));
  const t=performance.now();
  if(t-lastMove>8&&socket.connected&&playing){lastMove=t;socket.emit('game:move',{x:targetX,t:Date.now()+serverClockOffset,seq:++moveSeq})}
@@ -706,7 +908,7 @@ function localTouch(event){
 let activePointerId=null;
 const board=$('board');
 board.addEventListener('pointerdown',e=>{
- if(activePointerId!==null || e.target.closest('#discovery'))return;
+ if(activePointerId!==null || !playing || !canPlayCoop() || e.target.closest('#discovery'))return;
  const x=localTouch(e);
  if(x===null)return; // não começar arrastando sobre a pista do adversário
  activePointerId=e.pointerId;
@@ -716,7 +918,7 @@ board.addEventListener('pointerdown',e=>{
 });
 // Captura no WINDOW para manter o controle até quando o dedo sai da pista.
 function moveFromAnywhere(e){
- if(activePointerId===null||e.pointerId!==activePointerId)return;
+ if(activePointerId===null||e.pointerId!==activePointerId||!canPlayCoop())return;
  const rect=board.getBoundingClientRect(),r=laneRect(0);
  // Sem verificação de Y: controle funciona até abaixo da tabela do jogo.
  requestMove((e.clientX-rect.left-r.x)/r.w);
@@ -732,7 +934,7 @@ window.addEventListener('pointerup',releasePointer,true);
 window.addEventListener('pointercancel',releasePointer,true);
 window.addEventListener('blur',()=>{activePointerId=null});
 addEventListener('keydown',e=>{
- if(['ArrowLeft','ArrowRight','KeyA','KeyD'].includes(e.code)&&uiState==='game'){
+ if(['ArrowLeft','ArrowRight','KeyA','KeyD'].includes(e.code)&&uiState==='game'&&playing&&canPlayCoop()){
   buttons[e.code]=true;e.preventDefault();
  }
 });
@@ -806,6 +1008,7 @@ function smoothX(person,dt){
  smoothPositions.set(person.id,next);return next;
 }
 function drawCupInLane(r,p,dt,focus,label=false){
+ if(arenaMode()&&(p.eliminated||!p.connected))return;
  // O topo do copo está exatamente na linha de captura do servidor (y=0.81).
  const x=r.x+smoothX(p,dt)*r.w,y=r.y+r.h*.81;
  const w=r.mini?Math.max(18,Math.min(35,r.w*.24)):Math.max(33,Math.min(65,r.w*.14));
@@ -826,7 +1029,7 @@ function drawCupInLane(r,p,dt,focus,label=false){
  ctx.fillStyle=p.color+'b8';ctx.beginPath();ctx.moveTo(-w*.39,h*.52);ctx.lineTo(w*.39,h*.52);
  ctx.lineTo(w*.30,h*.89);ctx.lineTo(-w*.30,h*.89);ctx.closePath();ctx.fill();
  if(label){
-  const text=(p.id===myId?'VOCÊ':p.name.slice(0,8))+(arenaMode()&&DATA[p.targetIdx]?' · '+MINI_DROP_LABELS[p.targetIdx]:''),font=11;
+  const text=(p.id===myId?'VOCÊ':p.name.slice(0,8))+(arenaMode()&&p.targets?.length?' · '+p.targets.map(i=>MINI_DROP_LABELS[i]).join('+'):''),font=11;
   ctx.font=`850 ${font}px system-ui`;const tw=ctx.measureText(text).width+14;
   ctx.fillStyle='#0D0D0Ddc';rr(-tw/2,-26,tw,18,7);ctx.fill();
   ctx.fillStyle=p.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,0,-17);
@@ -915,7 +1118,7 @@ function visualDropLag(now){
  return Math.max(0,Math.min(.31,(now-worldReceivedAt)/1000+.04));
 }
 function checkOwnVisualContacts(lag){
- if(!playing||!socket.connected||!myId||!world)return;
+ if(!playing||!socket.connected||!myId||!world||!canPlayCoop())return;
  const r=laneRect(0);
  const geo=PolyDropCollision.geometryForLane(r.w,r.h);
  if(!geo)return;
@@ -984,7 +1187,7 @@ function renderBoard(now,dt){
 function draw(t){
  const dt=Math.min(.05,Math.max(0,(t-lastRender)/1000));lastRender=t;
  if(uiState!=='game'||!boardW||!boardH)return;
- if(playing){
+ if(playing&&canPlayCoop()){
   let delta=0;
   if(buttons.ArrowLeft||buttons.KeyA)delta-=dt*.85;
   if(buttons.ArrowRight||buttons.KeyD)delta+=dt*.85;
